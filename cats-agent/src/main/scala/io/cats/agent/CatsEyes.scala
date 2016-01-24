@@ -2,8 +2,14 @@ package io.cats.agent
 
 import javax.management._
 import javax.management.remote.{JMXConnector, JMXConnectorFactory, JMXServiceURL}
+import com.yammer.metrics.reporting.JmxReporter.CounterMBean
+import org.apache.cassandra.service.StorageServiceMBean
+
 import scala.collection.JavaConverters._
 class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
+
+  // TODO define val (or var) attributes to keep the JMXProxy references
+
 
   def createJMXConnection() : MBeanServerConnection = {
     // TODO manage exception
@@ -16,13 +22,20 @@ class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Op
     // TODO addition of a listener to monitor some action like repair : connector.addlistener...
 
     connector.getMBeanServerConnection
+
+    // TODO init all jmx proxies here
   }
+
+  private def getStorageMetricLoadProxy(mbsc : MBeanServerConnection) = getStorageMetricProxy(mbsc, "Load")
+  private def getStorageMetricTotalHintsProxy(mbsc : MBeanServerConnection) =  getStorageMetricProxy(mbsc, "TotalHints")
+  private def getStorageMetricTotalHintsInProgessProxy(mbsc : MBeanServerConnection) =  getStorageMetricProxy(mbsc, "TotalHintsInProgress")
+  private def getStorageMetricProxy(mbsc : MBeanServerConnection, name: String) = JMX.newMBeanProxy(mbsc, new ObjectName(s"org.apache.cassandra.metrics:type=Storage,name=${name}"), classOf[CounterMBean], true)
 
   /**
     * @return Storage Load in Bytes
     */
   def readStorageLoad() : Long = {
-    createJMXConnection().getAttribute(new ObjectName("org.apache.cassandra.metrics:type=Storage,name=Load"), "Count").toString.toLong
+    getStorageMetricLoadProxy(createJMXConnection()).getCount
   }
 
   /**
