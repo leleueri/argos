@@ -2,13 +2,18 @@ package io.cats.agent
 
 import javax.management._
 import javax.management.remote.{JMXConnector, JMXConnectorFactory, JMXServiceURL}
-import com.yammer.metrics.reporting.JmxReporter.CounterMBean
-import org.apache.cassandra.service.StorageServiceMBean
+import com.yammer.metrics.reporting.JmxReporter.{GaugeMBean, CounterMBean}
+import io.cats.agent.bean.{ThreadPoolStats, DroppedMessageStats}
 
 import scala.collection.JavaConverters._
 class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
 
-  // TODO define val (or var) attributes to keep the JMXProxy references
+  lazy val mbeanServerCnx = createJMXConnection
+
+  lazy val storageMetricsLoad = initStorageMetricLoadProxy(mbeanServerCnx)
+  lazy val storageMetricsExceptions = initStorageMetricExceptionsProxy(mbeanServerCnx)
+  lazy val storageMetricsTotalHints = initStorageMetricTotalHintsProxy(mbeanServerCnx)
+  lazy val storageMetricsTotalHintsInProgress = initStorageMetricTotalHintsInProgessProxy(mbeanServerCnx)
 
 
   def createJMXConnection() : MBeanServerConnection = {
@@ -22,79 +27,77 @@ class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Op
     // TODO addition of a listener to monitor some action like repair : connector.addlistener...
 
     connector.getMBeanServerConnection
-
-    // TODO init all jmx proxies here
   }
 
-  private def getStorageMetricLoadProxy(mbsc : MBeanServerConnection) = getStorageMetricProxy(mbsc, "Load")
-  private def getStorageMetricTotalHintsProxy(mbsc : MBeanServerConnection) =  getStorageMetricProxy(mbsc, "TotalHints")
-  private def getStorageMetricTotalHintsInProgessProxy(mbsc : MBeanServerConnection) =  getStorageMetricProxy(mbsc, "TotalHintsInProgress")
-  private def getStorageMetricProxy(mbsc : MBeanServerConnection, name: String) = JMX.newMBeanProxy(mbsc, new ObjectName(s"org.apache.cassandra.metrics:type=Storage,name=${name}"), classOf[CounterMBean], true)
+
+  private def initStorageMetricLoadProxy(mbsc : MBeanServerConnection) = initStorageMetricProxy(mbsc, "Load")
+  private def initStorageMetricExceptionsProxy(mbsc : MBeanServerConnection) =  initStorageMetricProxy(mbsc, "Exceptions")
+  private def initStorageMetricTotalHintsProxy(mbsc : MBeanServerConnection) =  initStorageMetricProxy(mbsc, "TotalHints")
+  private def initStorageMetricTotalHintsInProgessProxy(mbsc : MBeanServerConnection) =  initStorageMetricProxy(mbsc, "TotalHintsInProgress")
+  private def initStorageMetricProxy(mbsc : MBeanServerConnection, name: String) = JMX.newMBeanProxy(mbsc, new ObjectName(s"org.apache.cassandra.metrics:type=Storage,name=${name}"), classOf[CounterMBean], true)
+
+
+  def getCounterMutationStageValues() = initStageValue("CounterMutationStage")
+  def getMutationStageValues() = initStageValue("MutationStage")
+  def getReadRepairStageValues() = initStageValue("ReadRepairStage")
+  def getReadStageValues() = initStageValue("ReadStage")
+  def getRequestResponseStageValues() = initStageValue("RequestResponseStage")
+  private def initStageValue(stage: String) = initThreadPoolStageValues(stage, "request")
+
+
+  def getMemtableFlushWriterValues() = initInternalStageValue("MemtableFlushWriter")
+  def getCompactionExecutorValues() = initInternalStageValue("CompactionExecutor")
+  def getGossipStageValues() = initInternalStageValue("GossipStage")
+  def getInternalResponseStageValues() = initInternalStageValue("InternalResponseStage")
+  private def initInternalStageValue(stage: String) = initThreadPoolStageValues(stage, "internal")
+
+  // TODO Heap usage & GC stats
+  // TODO READ/WRITE Latency ==> see Aaron Morton video CassSubmit 2015
+  // TODO READ/WRITE Throughput ==> see Aaron Morton video CassSubmit 2015
+
+  private def initThreadPoolStageValues(stage: String, path: String) : ThreadPoolStats =  {
+    val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toInt
+    val completed = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CompletedTasks"), "Value").toString.toInt
+    val currentlyBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CurrentlyBlockedTasks"), "Count").toString.toLong
+    val poolSize = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=MaxPoolSize"), "Value").toString.toInt
+    val pending = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=PendingTasks"), "Value").toString.toInt
+    val totalBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=TotalBlockedTasks"), "Count").toString.toLong
+
+    ThreadPoolStats(`type` = stage,
+      activeTasks = active,
+      completedTasks = completed,
+      currentBlockedTasks = currentlyBlocked,
+      maxPoolSize = poolSize,
+      pendingTasks = pending,
+      totalBlockedTasks = totalBlocked)
+  }
 
   /**
     * @return Storage Load in Bytes
     */
-  def readStorageLoad() : Long = {
-    getStorageMetricLoadProxy(createJMXConnection()).getCount
-  }
+  def readStorageLoad() = storageMetricsLoad.getCount
 
-  /**
-    * @return
-    */
-  def getCounterMutationStage() : Map[String, Int] = {
-    val attrList : AttributeList = createJMXConnection().getAttributes(new ObjectName("org.apache.cassandra.request:type=CounterMutationStage"), Array("ActiveCount", "CompletedTasks", "CoreThreads", "CurrentlyBlockedTasks", "PendingTasks", "TotalBlockedTasks"))
-    attrList.asScala.foldLeft(Map[String, Int]())((acc: Map[String, Int], att : AnyRef) => acc + (att.asInstanceOf[Attribute].getName -> att.asInstanceOf[Attribute].getValue.toString.toInt))
-  }
 
-  /**
-    * @return
-    */
-  def getMutationStage() : Map[String, Int] = {
-    val attrList : AttributeList = createJMXConnection().getAttributes(new ObjectName("org.apache.cassandra.request:type=MutationStage"), Array("ActiveCount", "CompletedTasks", "CoreThreads", "CurrentlyBlockedTasks", "PendingTasks", "TotalBlockedTasks"))
-    attrList.asScala.foldLeft(Map[String, Int]())((acc: Map[String, Int], att : AnyRef) => acc + (att.asInstanceOf[Attribute].getName -> att.asInstanceOf[Attribute].getValue.toString.toInt))
-  }
+  def getCounterMutationDroppedMessage() = initDroppedMessages("COUNTER_MUTATION")
+  def getMutationDroppedMessage() = initDroppedMessages("MUTATION")
+  def getPagedRangeDroppedMessage() = initDroppedMessages("PAGED_RANGE")
+  def getRangeSliceDroppedMessage() = initDroppedMessages("RANGE_SLICE")
+  def getReadRepairDroppedMessage() = initDroppedMessages("READ_REPAIR")
+  def getReadDroppedMessage() = initDroppedMessages("READ")
+  def getRequestResponseDroppedMessage() = initDroppedMessages("REQUEST_RESPONSE")
 
-  /**
-    * @return
-    */
-  def getReadRepairStage() : Map[String, Int] = {
-    val attrList : AttributeList = createJMXConnection().getAttributes(new ObjectName("org.apache.cassandra.request:type=ReadRepairStage"), Array("ActiveCount", "CompletedTasks", "CoreThreads", "CurrentlyBlockedTasks", "PendingTasks", "TotalBlockedTasks"))
-    attrList.asScala.foldLeft(Map[String, Int]())((acc: Map[String, Int], att : AnyRef) => acc + (att.asInstanceOf[Attribute].getName -> att.asInstanceOf[Attribute].getValue.toString.toInt))
-  }
 
-  /**
-    * @return
-    */
-  def getReadStage() : Map[String, Int] = {
-    val attrList : AttributeList = createJMXConnection().getAttributes(new ObjectName("org.apache.cassandra.request:type=ReadStage"), Array("ActiveCount", "CompletedTasks", "CoreThreads", "CurrentlyBlockedTasks", "PendingTasks", "TotalBlockedTasks"))
-    attrList.asScala.foldLeft(Map[String, Int]())((acc: Map[String, Int], att : AnyRef) => acc + (att.asInstanceOf[Attribute].getName -> att.asInstanceOf[Attribute].getValue.toString.toInt))
-  }
+  private def initDroppedMessages(scope: String) : DroppedMessageStats =  {
+    val values = mbeanServerCnx.getAttributes(
+      new ObjectName(s"org.apache.cassandra.metrics:type=DroppedMessage,scope=${scope},name=Dropped"),
+      Array("Count", "FifteenMinuteRate", "FiveMinuteRate", "MeanRate", "OneMinuteRate")).asScala
 
-  /**
-    * @return
-    */
-  def getRequestResponseStage() : Map[String, Int] = {
-    val attrList : AttributeList = createJMXConnection().getAttributes(new ObjectName("org.apache.cassandra.request:type=RequestResponseStage"), Array("ActiveCount", "CompletedTasks", "CoreThreads", "CurrentlyBlockedTasks", "PendingTasks", "TotalBlockedTasks"))
-    attrList.asScala.foldLeft(Map[String, Int]())((acc: Map[String, Int], att : AnyRef) => acc + (att.asInstanceOf[Attribute].getName -> att.asInstanceOf[Attribute].getValue.toString.toInt))
-  }
-
-  /**
-    * @return
-    */
-  def getDroppedMessage() : Map[String, Int] = {
-    /*
-    org.apache.cassandra.metrics:type=DroppedMessage,scope=_TRACE,name=Dropped
-org.apache.cassandra.metrics:type=DroppedMessage,scope=BINARY,name=Dropped
-org.apache.cassandra.metrics:type=DroppedMessage,scope=COUNTER_MUTATION,name=Dropped
-org.apache.cassandra.metrics:type=DroppedMessage,scope=MUTATION,name=Dropped
-org.apache.cassandra.metrics:type=DroppedMessage,scope=PAGED_RANGE,name=Dropped
-org.apache.cassandra.metrics:type=DroppedMessage,scope=RANGE_SLICE,name=Dropped
-org.apache.cassandra.metrics:type=DroppedMessage,scope=READ_REPAIR,name=Dropped
-org.apache.cassandra.metrics:type=DroppedMessage,scope=READ,name=Dropped
-org.apache.cassandra.metrics:type=DroppedMessage,scope=REQUEST_RESPONSE,name=Dropped
-     */
-    val attrList : AttributeList = createJMXConnection().getAttributes(new ObjectName("org.apache.cassandra.request:type=RequestResponseStage"), Array("ActiveCount", "CompletedTasks", "CoreThreads", "CurrentlyBlockedTasks", "PendingTasks", "TotalBlockedTasks"))
-    attrList.asScala.foldLeft(Map[String, Int]())((acc: Map[String, Int], att : AnyRef) => acc + (att.asInstanceOf[Attribute].getName -> att.asInstanceOf[Attribute].getValue.toString.toInt))
+    DroppedMessageStats(scope,
+      values(0).toString.toLong,
+      values(1).toString.toDouble,
+      values(2).toString.toDouble,
+      values(3).toString.toDouble,
+      values(4).toString.toDouble)
   }
 }
 
@@ -111,15 +114,4 @@ object CatsEyes {
 
   def apply(hostname: String, port: Int, user: String, pwd: String) : CatsEyes = new CatsEyes(hostname, port, Some(user), Some(pwd))
 
-}
-
-object App {
-  def main(args: Array[String]) {
-    println("StorageLoad : " + CatsEyes(args(0), args(1).toInt).readStorageLoad())
-    println("CounterMutation : " + CatsEyes(args(0), args(1).toInt).getCounterMutationStage())
-    println("Mutation : " + CatsEyes(args(0), args(1).toInt).getMutationStage())
-    println("ReadRepairMutation : " + CatsEyes(args(0), args(1).toInt).getReadRepairStage())
-    println("ReadMutation : " + CatsEyes(args(0), args(1).toInt).getReadStage())
-    println("RequestResponseMutation : " + CatsEyes(args(0), args(1).toInt).getRequestResponseStage())
-  }
 }
