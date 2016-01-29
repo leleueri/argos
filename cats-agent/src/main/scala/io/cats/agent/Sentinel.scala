@@ -4,10 +4,11 @@ import java.io.IOException
 import java.lang.management.ManagementFactory
 import java.rmi.ConnectException
 
-import akka.actor.Actor
+import akka.actor.{Props, Actor}
 import akka.actor.Actor.Receive
 import scala.concurrent.duration
 import scala.concurrent.duration._
+import io.cats.agent.bean.Notification
 import Messages._
 
 import scala.concurrent.ExecutionContext.Implicits.global // TODO is ti really the best way to do this?
@@ -29,7 +30,12 @@ class Sentinel extends Actor {
 
   val ce = CatsEyes("127.0.0.1", 7199)
 
+  // TODO provide confifuration for these information
+  val loadAvgThreshold = -20.0
+
   val osMBean = ManagementFactory.getOperatingSystemMXBean()
+
+  val mailNotif = context.actorOf(Props[MailNotifier], name ="mnotif")
 
   override def receive = {
     case CHECK_CRITICAL_METRICS => processCriticalControls
@@ -38,33 +44,44 @@ class Sentinel extends Actor {
   }
 
   private def processInformativeControl: Unit = {
-    try {
+/*    try {
       println(CHECK_INFORMATIVE_METRICS + " received");
-      println(ce.readStorageLoad())
+      println(ce.getStorageMetricLoad())
     } catch {
-      case ex: IOException => println("ERR")
-      case ex: ConnectException => println("ERR")
-    }
+      case ex: IOException => println("ERR : " + ex.getMessage)
+      case ex: ConnectException => println("ERR : " + ex.getMessage)
+    }*/
   }
 
   private def processWarningControl: Unit = {
-    try {
+/*    try {
       println(CHECK_WARNING_METRICS + " received");
       println(ce.getMutationStageValues().currentBlockedTasks)
     } catch {
-      case ex: ConnectException => println("ERR")
-      case ex: IOException => println("ERR")
-    }
+      case ex: ConnectException => println("ERR : " + ex.getMessage)
+      case ex: IOException => println("ERR : " + ex.getMessage)
+    }*/
   }
 
   private def processCriticalControls: Unit = {
     try {
      println(CHECK_CRITICAL_METRICS + " received");
-     println(osMBean.getSystemLoadAverage)
+
+      val loadAvg = osMBean.getSystemLoadAverage
+      notifOnThreshold(loadAvg, loadAvgThreshold, NOTIFICATION_LEVEL_CRITICAL, "Load too heavy on Host xxx") // TODO
+     /* val usedSpaceInformation = ce.getStorageSpaceInformation() */
+
     } catch {
-      case ex: ConnectException => println("ERR")
-      case ex: IOException => println("ERR")
+      case ex: ConnectException => println("ERR : " + ex.getMessage)
+      case ex: IOException => println("ERR : " + ex.getMessage)
     }
   }
 
+  private def notifOnThreshold(value: Long, threshold: Long, level: String, msg: String) = {
+    if (value > loadAvgThreshold) mailNotif ! Notification(level, msg)
+  }
+
+  private def notifOnThreshold(value: Double, threshold: Double, level: String, msg: String) = {
+    if (value > loadAvgThreshold) mailNotif ! Notification(level, msg)
+  }
 }

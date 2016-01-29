@@ -1,20 +1,28 @@
 package io.cats.agent
 
+import java.nio.file.Paths
 import javax.management._
 import javax.management.remote.{JMXConnector, JMXConnectorFactory, JMXServiceURL}
 import com.yammer.metrics.reporting.JmxReporter.{GaugeMBean, CounterMBean}
-import io.cats.agent.bean.{ThreadPoolStats, DroppedMessageStats}
+import io.cats.agent.bean.{StorageSpaceInfo, ThreadPoolStats, DroppedMessageStats}
+import org.apache.cassandra.service.StorageServiceMBean
 
 import scala.collection.JavaConverters._
+
+/**
+  * Eyes of the CatsAgent... :)
+  * This class gets JMX information from the Cassandra node monitored by the Cats Agent.
+  *
+  * @param hostname
+  * @param port
+  * @param user
+  * @param pwd
+  */
 class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
 
   lazy val mbeanServerCnx = createJMXConnection
 
-  lazy val storageMetricsLoad = initStorageMetricLoadProxy(mbeanServerCnx)
-  lazy val storageMetricsExceptions = initStorageMetricExceptionsProxy(mbeanServerCnx)
-  lazy val storageMetricsTotalHints = initStorageMetricTotalHintsProxy(mbeanServerCnx)
-  lazy val storageMetricsTotalHintsInProgress = initStorageMetricTotalHintsInProgessProxy(mbeanServerCnx)
-
+  lazy val storageServiceProxy = initStorageServiceProxy();
 
   def createJMXConnection() : MBeanServerConnection = {
     // TODO manage exception
@@ -29,29 +37,84 @@ class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Op
     connector.getMBeanServerConnection
   }
 
+  private def initStorageServiceProxy() = JMX.newMBeanProxy(mbeanServerCnx, new ObjectName("org.apache.cassandra.db:type=StorageService"), classOf[StorageServiceMBean])
 
-  private def initStorageMetricLoadProxy(mbsc : MBeanServerConnection) = initStorageMetricProxy(mbsc, "Load")
-  private def initStorageMetricExceptionsProxy(mbsc : MBeanServerConnection) =  initStorageMetricProxy(mbsc, "Exceptions")
-  private def initStorageMetricTotalHintsProxy(mbsc : MBeanServerConnection) =  initStorageMetricProxy(mbsc, "TotalHints")
-  private def initStorageMetricTotalHintsInProgessProxy(mbsc : MBeanServerConnection) =  initStorageMetricProxy(mbsc, "TotalHintsInProgress")
-  private def initStorageMetricProxy(mbsc : MBeanServerConnection, name: String) = JMX.newMBeanProxy(mbsc, new ObjectName(s"org.apache.cassandra.metrics:type=Storage,name=${name}"), classOf[CounterMBean], true)
+  def getStorageSpaceInformation() : Array[StorageSpaceInfo] = {
+    def analysePath(path: String, commitLog : Boolean = false) : StorageSpaceInfo = {
+      val file = Paths.get(path).toFile
+      val totalSpace = file.getTotalSpace(); //total disk space in bytes.
+      val freeSpace = file.getFreeSpace(); //unallocated / free disk space in bytes.
 
+      StorageSpaceInfo(path, (totalSpace - freeSpace), freeSpace, totalSpace, commitLog)
+    }
 
+    val commitLogPath = storageServiceProxy.getCommitLogLocation
+    val dataDirectories = storageServiceProxy.getAllDataFileLocations
+    dataDirectories.foldLeft(Array(analysePath(commitLogPath, true)))((arr, path) => arr :+ analysePath(path) )
+  }
+
+  /**
+    * @return Storage load in Bytes (space used by SSTables)
+    */
+  def getStorageMetricLoad() = initStorageMetric("Load")
+  /**
+    * @return Number of storage exceptions
+    */
+  def getStorageMetricExceptions() =  initStorageMetric("Exceptions")
+  /**
+    * @return Number of Hints to replay
+    */
+  def getStorageMetricTotalHints() =  initStorageMetric("TotalHints")
+  /**
+    * @return Number of Hints that are replaying
+    */
+  def getStorageMetricTotalHintsInProgess() =  initStorageMetric("TotalHintsInProgress")
+  private def initStorageMetric(name: String) = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=Storage,name=${name}"),"Count").toString.toLong
+
+  // TODO only use the stages provided by the nodetootl tpstats ???
+
+  /**
+    * @return Information about the COUNTER_MUTATION ThreadPool
+    */
   def getCounterMutationStageValues() = initStageValue("CounterMutationStage")
+  /**
+    * @return Information about the MUTATION ThreadPool
+    */
   def getMutationStageValues() = initStageValue("MutationStage")
+  /**
+    * @return Information about the READ_REPAIR ThreadPool
+    */
   def getReadRepairStageValues() = initStageValue("ReadRepairStage")
+  /**
+    * @return Information about the READ ThreadPool
+    */
   def getReadStageValues() = initStageValue("ReadStage")
+  /**
+    * @return Information about the REQUEST_RESPONSE ThreadPool
+    */
   def getRequestResponseStageValues() = initStageValue("RequestResponseStage")
   private def initStageValue(stage: String) = initThreadPoolStageValues(stage, "request")
 
-
+  /**
+    * @return Information about the FlushWriter ThreadPool
+    */
   def getMemtableFlushWriterValues() = initInternalStageValue("MemtableFlushWriter")
+  /**
+    * @return Information about the Compaction ThreadPool
+    */
   def getCompactionExecutorValues() = initInternalStageValue("CompactionExecutor")
+  /**
+    * @return Information about the Gossip ThreadPool
+    */
   def getGossipStageValues() = initInternalStageValue("GossipStage")
+  /**
+    * @return Information about the InternalResponse ThreadPool
+    */
   def getInternalResponseStageValues() = initInternalStageValue("InternalResponseStage")
   private def initInternalStageValue(stage: String) = initThreadPoolStageValues(stage, "internal")
 
   // TODO Heap usage & GC stats
+  // TODO filesystem usage
   // TODO READ/WRITE Latency ==> see Aaron Morton video CassSubmit 2015
   // TODO READ/WRITE Throughput ==> see Aaron Morton video CassSubmit 2015
 
@@ -73,17 +136,32 @@ class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Op
   }
 
   /**
-    * @return Storage Load in Bytes
+    * @return Information about the COUNTER_MUTATION dropped messages
     */
-  def readStorageLoad() = storageMetricsLoad.getCount
-
-
   def getCounterMutationDroppedMessage() = initDroppedMessages("COUNTER_MUTATION")
+  /**
+    * @return Information about the MUTATION dropped messages
+    */
   def getMutationDroppedMessage() = initDroppedMessages("MUTATION")
+  /**
+    * @return Information about the PAGED_RANGE dropped messages
+    */
   def getPagedRangeDroppedMessage() = initDroppedMessages("PAGED_RANGE")
+  /**
+    * @return Information about the RANGE_SLICE dropped messages
+    */
   def getRangeSliceDroppedMessage() = initDroppedMessages("RANGE_SLICE")
+  /**
+    * @return Information about the READ_REPAIR dropped messages
+    */
   def getReadRepairDroppedMessage() = initDroppedMessages("READ_REPAIR")
+  /**
+    * @return Information about the READ dropped messages
+    */
   def getReadDroppedMessage() = initDroppedMessages("READ")
+  /**
+    * @return Information about the REQUEST_RESPONSE dropped messages
+    */
   def getRequestResponseDroppedMessage() = initDroppedMessages("REQUEST_RESPONSE")
 
 
