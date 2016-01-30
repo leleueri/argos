@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
   * @param user
   * @param pwd
   */
-class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
+class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
 
   lazy val mbeanServerCnx = createJMXConnection
 
@@ -179,17 +179,17 @@ class CatsEyes(hostname: String, port: Int, user: Option[String] = None, pwd: Op
   }
 }
 
-object CatsEyes {
+object JmxClient {
 
   val DEFAULT_HOSTNAME = "127.0.0.1"
   val DEFAULT_JMX_PORT = 7199
 
-  def apply() : CatsEyes = {
-    new CatsEyes(DEFAULT_HOSTNAME, DEFAULT_JMX_PORT)
+  def apply() : JmxClient = {
+    new JmxClient(DEFAULT_HOSTNAME, DEFAULT_JMX_PORT)
   }
 
-  def apply(hostname: String, port: Int) : CatsEyes = new CatsEyes(hostname, port)
+  def apply(hostname: String, port: Int) : JmxClient = new JmxClient(hostname, port)
 
-  def apply(hostname: String, port: Int, user: String, pwd: String) : CatsEyes = new CatsEyes(hostname, port, Some(user), Some(pwd))
+  def apply(hostname: String, port: Int, user: String, pwd: String) : JmxClient = new JmxClient(hostname, port, Some(user), Some(pwd))
 
 }

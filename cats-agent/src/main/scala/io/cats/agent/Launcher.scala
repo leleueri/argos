@@ -10,6 +10,6 @@ object Launcher extends App {
 
   val system = ActorSystem(ACTOR_SYSTEM)
   // default Actor constructor
-  val sentinel = system.actorOf(Props[Sentinel], name = "sentinel-127.0.0.1") // TODO rendre dynamique la definition de l'IP dans le nom... (prendre le hostname)
+  val sentinel = system.actorOf(Props[SentinelOrchestrator], name = "sentinel-127.0.0.1") // TODO rendre dynamique la definition de l'IP dans le nom... (prendre le hostname)
 
 }
