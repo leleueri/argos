@@ -166,16 +166,15 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
 
 
   private def initDroppedMessages(scope: String) : DroppedMessageStats =  {
-    val values = mbeanServerCnx.getAttributes(
-      new ObjectName(s"org.apache.cassandra.metrics:type=DroppedMessage,scope=${scope},name=Dropped"),
-      Array("Count", "FifteenMinuteRate", "FiveMinuteRate", "MeanRate", "OneMinuteRate")).asScala
+    val attrNames = Array("Count", "FifteenMinuteRate", "FiveMinuteRate", "MeanRate", "OneMinuteRate")
+    val values = mbeanServerCnx.getAttributes(new ObjectName(s"org.apache.cassandra.metrics:type=DroppedMessage,scope=${scope},name=Dropped"), attrNames)
 
     DroppedMessageStats(scope,
-      values(0).toString.toLong,
-      values(1).toString.toDouble,
-      values(2).toString.toDouble,
-      values(3).toString.toDouble,
-      values(4).toString.toDouble)
+      values.get(0).asInstanceOf[Attribute].getValue.toString.toLong,
+      values.get(1).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(2).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(3).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(4).asInstanceOf[Attribute].getValue.toString.toDouble)
   }
 }
 

@@ -9,7 +9,7 @@ import akka.actor.{Props, Actor}
 import akka.actor.Actor.Receive
 import com.typesafe.config.ConfigFactory
 import io.cats.agent.Constants._
-import io.cats.agent.sentinels.{HintsSentinel, LoadAverageSentinel}
+import io.cats.agent.sentinels._
 import scala.concurrent.duration
 import scala.concurrent.duration._
 import io.cats.agent.bean.Notification
@@ -37,7 +37,16 @@ class SentinelOrchestrator extends Actor {
   val sentinels = {
     Array(
       new LoadAverageSentinel(osMBean, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_LOADAVG)),
-      new HintsSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_HINTS))
+      new HintsSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_HINTS)),
+      new DroppedCounterSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER)),
+      new DroppedMutationSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION)),
+      new DroppedReadSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ)),
+      new DroppedReadRepairSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ_REPAIR)),
+      new DroppedPageRangeSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_PAGE)),
+      new DroppedRangeSliceSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE)),
+      new DroppedRequestResponseSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP))
+
+    // TODO sentinel to check disk usage
     ).filter(_.isEnabled)
   }
 
