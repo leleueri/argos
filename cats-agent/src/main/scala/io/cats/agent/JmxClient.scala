@@ -71,8 +71,6 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
   def getStorageMetricTotalHintsInProgess() =  initStorageMetric("TotalHintsInProgress")
   private def initStorageMetric(name: String) = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=Storage,name=${name}"),"Count").toString.toLong
 
-  // TODO only use the stages provided by the nodetootl tpstats ???
-
   /**
     * @return Information about the COUNTER_MUTATION ThreadPool
     */

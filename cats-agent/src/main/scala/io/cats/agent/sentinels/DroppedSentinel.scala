@@ -20,10 +20,8 @@ abstract class DroppedSentinel(jmxAccess: JmxClient, handler: ActorRef, override
 
   override def analyze(): Option[DroppedMessageStats] = {
     val droppedMsg = getDroppedMessageStats
-    if (droppedMsg.oneMinRate > 0.0) {
-      if (System.currentTimeMillis >= nextReact) {
-        Some(droppedMsg)
-      } else None
+    if (droppedMsg.oneMinRate > 0.0 && System.currentTimeMillis >= nextReact) {
+      Some(droppedMsg)
     } else {
       None
     }
