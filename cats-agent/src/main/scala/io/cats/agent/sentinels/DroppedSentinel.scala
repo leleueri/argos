@@ -1,16 +1,20 @@
 package io.cats.agent.sentinels
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.ActorRef
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.{DroppedMessageStats, Notification}
 import io.cats.agent.{HostnameProvider, JmxClient}
 
+import scala.concurrent.duration.FiniteDuration
+import scala.util.Try
+
 abstract class DroppedSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends Sentinel[DroppedMessageStats] {
 
   private var nextReact = System.currentTimeMillis
-
-  private val FREQUENCY = (5*60*1000)
+  private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   def getDroppedMessageStats : DroppedMessageStats
 

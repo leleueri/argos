@@ -42,7 +42,7 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
   def getStorageSpaceInformation() : Array[StorageSpaceInfo] = {
     def analysePath(path: String, commitLog : Boolean = false) : StorageSpaceInfo = {
       val file = Paths.get(path).toFile
-      val totalSpace = file.getTotalSpace(); //total disk space in bytes.
+      val totalSpace = file.getTotalSpace(); // total disk space in bytes.
       val freeSpace = file.getFreeSpace(); //unallocated / free disk space in bytes.
 
       StorageSpaceInfo(path, (totalSpace - freeSpace), freeSpace, totalSpace, commitLog)
@@ -114,7 +114,6 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
   private def initInternalStageValue(stage: String) = initThreadPoolStageValues(stage, "internal")
 
   // TODO Heap usage & GC stats
-  // TODO filesystem usage
   // TODO READ/WRITE Latency ==> see Aaron Morton video CassSubmit 2015
   // TODO READ/WRITE Throughput ==> see Aaron Morton video CassSubmit 2015
 

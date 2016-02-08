@@ -1,6 +1,7 @@
 package io.cats.agent.sentinels
 
 import java.lang.management.OperatingSystemMXBean
+import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
@@ -8,11 +9,13 @@ import io.cats.agent.Constants._
 import io.cats.agent.{JmxClient, HostnameProvider}
 import io.cats.agent.bean.Notification
 
+import scala.concurrent.duration.FiniteDuration
+import scala.util.Try
+
 class HintsSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends Sentinel[Long] {
 
   private var nextReact = System.currentTimeMillis
-
-  private val FREQUENCY = (5*60*1000)
+  private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   override def analyze(): Option[Long] = {
     Some(jmxAccess.getStorageMetricTotalHints()).filter(_>0) // TODO improve the algorithm, we should also check the hints in progress and see how these two value evolve

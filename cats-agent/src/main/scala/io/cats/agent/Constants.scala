@@ -23,11 +23,14 @@ object Constants {
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE = "cats.sentinel.dropped-range-slice"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP = "cats.sentinel.dropped-request-response"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_PAGE = "cats.sentinel.dropped-page-range"
+  val CONF_OBJECT_ENTRY_SENTINEL_DISK_SPACE = "cats.sentinel.disk-space"
 
   val CONF_THRESHOLD = "threshold"
   val CONF_ENABLED = "enabled"
   val CONF_LEVEL = "level"
   val CONF_LABEL = "label"
+  val CONF_FREQUENCY = "period"
+  val CONF_COMMIT_LOG_THRESHOLD = "commitlog-threshold"
 
   val CONF_OBJECT_ENTRY_MAIL_NOTIFIER = "cats.notifiers.mail"
   val CONF_MAIL_NOTIFIER_SMTP = "smtp-host"
