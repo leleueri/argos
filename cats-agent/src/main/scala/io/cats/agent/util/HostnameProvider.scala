@@ -1,4 +1,4 @@
-package io.cats.agent
+package io.cats.agent.util
 
 import scala.io.Source
 

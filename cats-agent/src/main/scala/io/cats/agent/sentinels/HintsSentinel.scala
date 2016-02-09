@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorRef
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
-import io.cats.agent.{JmxClient, HostnameProvider}
 import io.cats.agent.bean.Notification
+import io.cats.agent.util.{JmxClient, HostnameProvider}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try

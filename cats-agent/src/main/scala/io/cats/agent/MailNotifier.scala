@@ -39,7 +39,8 @@ class MailNotifier extends Actor {
 
       Transport.send(message);
     } catch {
-      case mex : MessagingException =>  mex.printStackTrace();
+      case mex : MessagingException =>  mex.printStackTrace();// TODO use logger
+      case ex =>  ex.printStackTrace();// TODO use logger
     }
   }
 }

@@ -3,31 +3,31 @@ package io.cats.agent
 import java.io.IOException
 import java.lang.management.ManagementFactory
 import java.rmi.ConnectException
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, Executor, TimeUnit}
 
-import akka.actor.{Props, Actor}
+import akka.actor.{ActorLogging, Props, Actor}
 import akka.actor.Actor.Receive
 import com.typesafe.config.ConfigFactory
 import io.cats.agent.Constants._
 import io.cats.agent.sentinels._
-import scala.concurrent.duration
+import io.cats.agent.util.{HostnameProvider, JmxClient}
+import scala.concurrent.{ExecutionContext, duration}
 import scala.concurrent.duration._
 import io.cats.agent.bean.Notification
 import Messages._
 
-import scala.concurrent.ExecutionContext.Implicits.global // TODO is it really the best way to do this?
 
 /**
  * The "SentinelOrchestrator" actor schedule the sentinels that analyze information provided by the JMX interface of the Cassandra Node.
  */
-class SentinelOrchestrator extends Actor {
+class SentinelOrchestrator extends Actor with ActorLogging {
 
   val globalConfig = ConfigFactory.load()
 
   val configSentinel = globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_ORCHESTRATOR)
   val interval = configSentinel.getDuration(CONF_ORCHESTRATOR_INTERVAL)
 
-  context.system.scheduler.schedule(1 second, Duration.create(interval.getSeconds, TimeUnit.SECONDS), self, CHECK_METRICS )
+  context.system.scheduler.schedule(1 second, Duration.create(interval.getSeconds, TimeUnit.SECONDS), self, CHECK_METRICS )(ExecutionContext.fromExecutor(Executors.newSingleThreadScheduledExecutor()))
 
   val jmxClient = JmxClient(configSentinel.getString(CONF_ORCHESTRATOR_JMX_HOST), configSentinel.getInt(CONF_ORCHESTRATOR_JMX_PORT))
   val osMBean = ManagementFactory.getOperatingSystemMXBean()
@@ -64,16 +64,38 @@ class SentinelOrchestrator extends Actor {
   }
 
   override def receive = {
-    case CHECK_METRICS => processCriticalControls
+    case CHECK_METRICS => processControls
   }
 
-  private def processCriticalControls: Unit = {
+  def offline : Receive = {
+    case CHECK_METRICS => tryToProcessControls
+  }
+
+  private def processControls: Unit = {
     try {
-      println(CHECK_METRICS + " received");
+      log.debug("{} received", CHECK_METRICS);
       sentinels.foreach(_.analyzeAndReact())
     } catch {
-      case ex: ConnectException => println("ERR : " + ex.getMessage)
-      case ex: IOException => println("ERR : " + ex.getMessage)
+      case ex: ConnectException =>
+        log.warning("Connection error : {}", ex.getMessage, ex);
+        mailNotif ! Notification(s"[CRITIC] Cassandra node ${HostnameProvider.hostname} is DOWN", s"The node ${HostnameProvider.hostname} may be down!!!")
+        context.become(offline) // become offline. this mode try to check the metrics but call logger with debug level
+      case ex: IOException =>
+        log.warning("Unexpected IO Exception : {}", ex.getMessage, ex) // do we have to become offline in this case??
+    }
+  }
+
+  private def tryToProcessControls: Unit = {
+    try {
+      log.debug("{} received, try to reconnect", CHECK_METRICS);
+      jmxClient.reconnect
+      //sentinels.foreach(_.analyzeAndReact())
+      log.info("Reconnected to the cassandra node");
+      mailNotif ! Notification(s"[INFO] Cassandra node ${HostnameProvider.hostname} is UP", s"The node ${HostnameProvider.hostname} joins the cluster")
+      context.unbecome // if checks succeeded, the connection is established with the Cassandra node, we can retrieve our nominal state
+    } catch {
+      case ex: ConnectException => log.debug("Connection error : {}", ex.getMessage);
+      case ex: IOException => log.debug("Unexpected IO Exception : {}", ex.getMessage);
     }
   }
 }

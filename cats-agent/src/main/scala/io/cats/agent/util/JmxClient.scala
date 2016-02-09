@@ -1,13 +1,14 @@
-package io.cats.agent
+package io.cats.agent.util
 
 import java.nio.file.Paths
 import javax.management._
 import javax.management.remote.{JMXConnector, JMXConnectorFactory, JMXServiceURL}
-import com.yammer.metrics.reporting.JmxReporter.{GaugeMBean, CounterMBean}
-import io.cats.agent.bean.{StorageSpaceInfo, ThreadPoolStats, DroppedMessageStats}
+
+import io.cats.agent.bean.{DroppedMessageStats, StorageSpaceInfo, ThreadPoolStats}
 import org.apache.cassandra.service.StorageServiceMBean
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 /**
   * Eyes of the CatsAgent... :)
@@ -20,24 +21,32 @@ import scala.collection.JavaConverters._
   */
 class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
 
-  lazy val mbeanServerCnx = createJMXConnection
+  var connector = createConnection()
+  var mbeanServerCnx = createMBeanServer
 
-  lazy val storageServiceProxy = initStorageServiceProxy();
+  var storageServiceProxy = initStorageServiceProxy()
 
-  def createJMXConnection() : MBeanServerConnection = {
-    // TODO manage exception
+  private def createConnection() : JMXConnector = {
     val url = new JMXServiceURL(s"service:jmx:rmi:///jndi/rmi://${hostname}:${port}/jmxrmi")
-    val connector = user match {
+    user match {
       case Some(login) => JMXConnectorFactory.connect(url, Map(JMXConnector.CREDENTIALS -> Array(login, pwd.get)).asJava)
       case None => JMXConnectorFactory.connect(url)
     }
+  }
 
+  private def createMBeanServer() : MBeanServerConnection = {
     // TODO addition of a listener to monitor some action like repair : connector.addlistener...
-
     connector.getMBeanServerConnection
   }
 
   private def initStorageServiceProxy() = JMX.newMBeanProxy(mbeanServerCnx, new ObjectName("org.apache.cassandra.db:type=StorageService"), classOf[StorageServiceMBean])
+
+  def reconnect() = {
+    Try(connector.close())
+    connector = createConnection()
+    mbeanServerCnx = createMBeanServer()
+    storageServiceProxy = initStorageServiceProxy()
+  }
 
   def getStorageSpaceInformation() : Array[StorageSpaceInfo] = {
     def analysePath(path: String, commitLog : Boolean = false) : StorageSpaceInfo = {
