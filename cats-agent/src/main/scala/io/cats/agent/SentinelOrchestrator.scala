@@ -34,6 +34,8 @@ class SentinelOrchestrator extends Actor with ActorLogging {
 
   val mailNotif = context.actorOf(MailNotifier.props(), name ="mail-notifier")
 
+  log.info("SentinelOrchestrator is running...")
+
   val sentinels = {
     Array(
       new LoadAverageSentinel(osMBean, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_LOADAVG)),
@@ -73,7 +75,10 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   private def processControls: Unit = {
     try {
       log.debug("{} received", CHECK_METRICS);
-      sentinels.foreach(_.analyzeAndReact())
+      sentinels.foreach { sentinel =>
+        log.debug("CALL {}.analyseAndReact", sentinel.getClass.getName)
+        sentinel.analyzeAndReact()
+      }
     } catch {
       case ex: ConnectException =>
         log.warning("Connection error : {}", ex.getMessage, ex);

@@ -22,12 +22,17 @@ class MailNotifier extends Actor with ActorLogging {
   props.put("mail.smtp.host", host);
   val session = Session.getInstance(props, null);
 
+  log.info("MailNotifier is running...")
+
   override def receive = {
     case Notification(title, msg) => sendMessage(title, msg)
   }
 
   def sendMessage(title: String, msg: String) : Unit = {
     try {
+
+      log.debug("Send Message with title : {}", title)
+
       val message = new MimeMessage(session);
       message.setFrom(new InternetAddress(from));
       to.foreach {
