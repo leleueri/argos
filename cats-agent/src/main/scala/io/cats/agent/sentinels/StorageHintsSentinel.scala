@@ -21,7 +21,7 @@ class StorageHintsSentinel(jmxAccess: JmxClient, handler: ActorRef, override val
     val totalHints = jmxAccess.getStorageMetricTotalHints()
     val hintsInProgress = jmxAccess.getStorageMetricTotalHintsInProgess()
 
-    val notificationData = Array(totalHints - previousValue(0), hintsInProgress - previousValue(1))
+    val notificationData = Array(totalHints - previousValue(0), hintsInProgress)
 
     if ( (notificationData(0) > 0) && (System.currentTimeMillis >= nextReact)) {
       previousValue = Array(totalHints, hintsInProgress)
@@ -34,8 +34,8 @@ class StorageHintsSentinel(jmxAccess: JmxClient, handler: ActorRef, override val
   override def react(info: Array[Long]): Unit = {
     val messageBody = s"""Cassandra Node ${HostnameProvider.hostname} has some storage hints.
          |
-         | new hints since last check : ${info(0)}
-         | computed hints since last check : ${info(1)}
+         | At least '${info(0)}' hints since last check
+         | Currently this node's replying '${info(1)}' hints.
          |
          | Some nodes may be stopped (or there are network issues).
        """.stripMargin

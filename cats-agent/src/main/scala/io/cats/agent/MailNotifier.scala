@@ -1,6 +1,6 @@
 package io.cats.agent
 
-import akka.actor.{Props, Actor}
+import akka.actor.{ActorLogging, Props, Actor}
 import com.typesafe.config.ConfigFactory
 import io.cats.agent.bean.Notification
 import java.util.{Date, Properties}
@@ -10,7 +10,7 @@ import Constants._
 
 import scala.collection.JavaConverters._
 
-class MailNotifier extends Actor {
+class MailNotifier extends Actor with ActorLogging {
 
   val configMail = ConfigFactory.load().getConfig(CONF_OBJECT_ENTRY_MAIL_NOTIFIER)
 
@@ -39,8 +39,7 @@ class MailNotifier extends Actor {
 
       Transport.send(message);
     } catch {
-      case mex : MessagingException =>  mex.printStackTrace();// TODO use logger
-      case ex =>  ex.printStackTrace();// TODO use logger
+      case mex : Exception =>  log.warning("Unable to send the notification message : {}", mex.getMessage, mex)
     }
   }
 }

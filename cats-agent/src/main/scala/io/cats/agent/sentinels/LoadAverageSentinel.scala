@@ -22,7 +22,7 @@ class LoadAverageSentinel(jmxAccess: OperatingSystemMXBean, handler: ActorRef, o
   override def analyze(): Option[Array[Double]] = {
     val loadAvg = jmxAccess.getSystemLoadAverage
     if (loadAvg > loadAvgThreshold) {
-      if (System.currentTimeMillis >= nextReact) { // TODO improve this to avoid flooding. for the moment one notification every 5 minutes...
+      if (System.currentTimeMillis >= nextReact) {
         Some(Array(loadAvg,loadAvgThreshold))
       } else None
     } else {

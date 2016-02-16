@@ -15,7 +15,6 @@ object Constants {
 
   val CONF_OBJECT_ENTRY_SENTINEL = "cats.sentinel"
   val CONF_OBJECT_ENTRY_SENTINEL_LOADAVG = "cats.sentinel.load-avg"
-  val CONF_OBJECT_ENTRY_SENTINEL_HINTS = "cats.sentinel.hints"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER = "cats.sentinel.dropped-counter"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION = "cats.sentinel.dropped-mutation"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ = "cats.sentinel.dropped-read"

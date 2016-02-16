@@ -12,7 +12,7 @@ import io.cats.agent.util.{JmxClient, HostnameProvider}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
-class StorageSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends Sentinel[Array[StorageSpaceInfo]] {
+class StorageSpaceSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends Sentinel[Array[StorageSpaceInfo]] {
 
   private val dataThreshold = conf.getDouble(CONF_THRESHOLD)
   private val commitlogThreshold = conf.getDouble(CONF_COMMIT_LOG_THRESHOLD)
@@ -31,7 +31,11 @@ class StorageSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf
   override def react(info: Array[StorageSpaceInfo]): Unit = {
     val messageHeader =
       s"""Cassandra Node ${HostnameProvider.hostname} needs additional disk space.
-         |Check the used space. Some Snapshots may have to be removed or increase the disk space.""".stripMargin
+         |Check the used space.
+         |Here is some tips :
+         |- Some Snapshots may have to be removed (nodetool clearsnapshot)
+         |- If you add a node recently, you may have to 'clean' some partition (nodetool cleanup)
+         |- You may have to increase the disk space or add some nodes.""".stripMargin
 
     val messageBody = info.foldLeft(messageHeader)((acc: String, currentInfo : StorageSpaceInfo) => acc +
       s"""

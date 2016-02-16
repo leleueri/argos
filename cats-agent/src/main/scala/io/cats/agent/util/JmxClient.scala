@@ -21,6 +21,10 @@ import scala.util.Try
   */
 class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
 
+  // TODO Heap usage & GC stats
+  // TODO READ/WRITE Latency ==> see Aaron Morton video CassSubmit 2015
+  // TODO READ/WRITE Throughput ==> see Aaron Morton video CassSubmit 2015
+
   var connector = createConnection()
   var mbeanServerCnx = createMBeanServer
 
@@ -78,6 +82,7 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
     * @return Number of Hints that are replaying
     */
   def getStorageMetricTotalHintsInProgess() =  initStorageMetric("TotalHintsInProgress")
+
   private def initStorageMetric(name: String) = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=Storage,name=${name}"),"Count").toString.toLong
 
   /**
@@ -100,6 +105,7 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
     * @return Information about the REQUEST_RESPONSE ThreadPool
     */
   def getRequestResponseStageValues() = initStageValue("RequestResponseStage")
+
   private def initStageValue(stage: String) = initThreadPoolStageValues(stage, "request")
 
   /**
@@ -118,11 +124,8 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
     * @return Information about the InternalResponse ThreadPool
     */
   def getInternalResponseStageValues() = initInternalStageValue("InternalResponseStage")
-  private def initInternalStageValue(stage: String) = initThreadPoolStageValues(stage, "internal")
 
-  // TODO Heap usage & GC stats
-  // TODO READ/WRITE Latency ==> see Aaron Morton video CassSubmit 2015
-  // TODO READ/WRITE Throughput ==> see Aaron Morton video CassSubmit 2015
+  private def initInternalStageValue(stage: String) = initThreadPoolStageValues(stage, "internal")
 
   private def initThreadPoolStageValues(stage: String, path: String) : ThreadPoolStats =  {
     val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toInt
@@ -169,7 +172,6 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
     * @return Information about the REQUEST_RESPONSE dropped messages
     */
   def getRequestResponseDroppedMessage() = initDroppedMessages("REQUEST_RESPONSE")
-
 
   private def initDroppedMessages(scope: String) : DroppedMessageStats =  {
     val attrNames = Array("Count", "FifteenMinuteRate", "FiveMinuteRate", "MeanRate", "OneMinuteRate")
