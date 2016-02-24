@@ -7,11 +7,11 @@ object Constants {
 
   val ACTOR_SYSTEM = "Cats"
 
+
   val CONF_OBJECT_ENTRY_SENTINEL_ORCHESTRATOR = "cats.sentinel.manager"
   val CONF_ORCHESTRATOR_INTERVAL = "scheduler-interval"
   val CONF_ORCHESTRATOR_JMX_HOST = "jmx-host"
   val CONF_ORCHESTRATOR_JMX_PORT = "jmx-port"
-
 
   val CONF_OBJECT_ENTRY_SENTINEL = "cats.sentinel"
   val CONF_OBJECT_ENTRY_SENTINEL_LOADAVG = "cats.sentinel.load-avg"
@@ -33,6 +33,8 @@ object Constants {
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ = "cats.sentinel.stage-read"
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ_REPAIR = "cats.sentinel.stage-read-repair"
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_REQUEST_RESPONSE= "cats.sentinel.stage-request-response"
+  val CONF_OBJECT_ENTRY_SENTINEL_JMX_NOTIFICATION= "cats.sentinel.notification-jmx"
+
 
   val CONF_THRESHOLD = "threshold"
   val CONF_ENABLED = "enabled"
@@ -40,6 +42,7 @@ object Constants {
   val CONF_LABEL = "label"
   val CONF_FREQUENCY = "period"
   val CONF_COMMIT_LOG_THRESHOLD = "commitlog-threshold"
+  val CONF_CASSANDRA_VERSION = "cversion"
 
   val CONF_OBJECT_ENTRY_MAIL_NOTIFIER = "cats.notifiers.mail"
   val CONF_MAIL_NOTIFIER_SMTP = "smtp-host"

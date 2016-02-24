@@ -30,6 +30,7 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
 
   var storageServiceProxy = initStorageServiceProxy()
 
+
   private def createConnection() : JMXConnector = {
     val url = new JMXServiceURL(s"service:jmx:rmi:///jndi/rmi://${hostname}:${port}/jmxrmi")
     user match {
@@ -39,11 +40,13 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
   }
 
   private def createMBeanServer() : MBeanServerConnection = {
-    // TODO addition of a listener to monitor some action like repair : connector.addlistener...
+    // TODO addition of a listener to monitor Node DOWN : connector.addlistener...
     connector.getMBeanServerConnection
   }
 
   private def initStorageServiceProxy() = JMX.newMBeanProxy(mbeanServerCnx, new ObjectName("org.apache.cassandra.db:type=StorageService"), classOf[StorageServiceMBean])
+
+  def addNotificationListener(objectName: ObjectName, listener: NotificationListener) : Unit = mbeanServerCnx.addNotificationListener(objectName,listener, null, null)
 
   def reconnect() = {
     Try(connector.close())

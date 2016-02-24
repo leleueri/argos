@@ -59,7 +59,9 @@ class SentinelOrchestrator extends Actor with ActorLogging {
       new MutationBlockedSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MUTATION)),
       new ReadBlockedSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ)),
       new ReadRepairBlockedSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ_REPAIR)),
-      new RequestResponseBlockedSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_REQUEST_RESPONSE))
+      new RequestResponseBlockedSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_REQUEST_RESPONSE)),
+
+      new InternalNotificationsSentinel(jmxClient, mailNotif, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_JMX_NOTIFICATION))
 
     ).filter(_.isEnabled)
   }
