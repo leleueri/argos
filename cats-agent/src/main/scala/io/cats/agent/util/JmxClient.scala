@@ -9,7 +9,7 @@ import org.apache.cassandra.service.StorageServiceMBean
 
 import scala.collection.JavaConverters._
 import scala.util.Try
-
+import scala.collection.mutable.Map
 /**
   * Eyes of the CatsAgent... :)
   * This class gets JMX information from the Cassandra node monitored by the Cats Agent.
@@ -30,6 +30,7 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
 
   var storageServiceProxy = initStorageServiceProxy()
 
+  val listeners : Map[ObjectName, NotificationListener] = Map()
 
   private def createConnection() : JMXConnector = {
     val url = new JMXServiceURL(s"service:jmx:rmi:///jndi/rmi://${hostname}:${port}/jmxrmi")
@@ -46,13 +47,19 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
 
   private def initStorageServiceProxy() = JMX.newMBeanProxy(mbeanServerCnx, new ObjectName("org.apache.cassandra.db:type=StorageService"), classOf[StorageServiceMBean])
 
-  def addNotificationListener(objectName: ObjectName, listener: NotificationListener) : Unit = mbeanServerCnx.addNotificationListener(objectName,listener, null, null)
+  def addNotificationListener(objectName: ObjectName, listener: NotificationListener) : Unit = {
+    listeners += (objectName -> listener)
+    mbeanServerCnx.addNotificationListener(objectName,listener, null, null)
+  }
 
   def reconnect() = {
     Try(connector.close())
     connector = createConnection()
     mbeanServerCnx = createMBeanServer()
     storageServiceProxy = initStorageServiceProxy()
+    listeners.foreach {
+      case (objName, listener) =>  mbeanServerCnx.addNotificationListener (objName, listener, null, null)
+     }
   }
 
   def getStorageSpaceInformation() : Array[StorageSpaceInfo] = {
