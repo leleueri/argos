@@ -9,7 +9,7 @@ This tool is based on [Akka](http://akka.io/ "Akka"), if you want to configure t
 The cats specific configuration entry point is identified by the __cats__ section that contains two main entries :
 * sentinel : this section defines the configuration of each sentinel and the JMX connectivity
 * notifiers : this section defines the configuration for each notification process (currently, there are only one type of notifier *mail*)
-
+<pre>
 <code>
 	akka {
 	  loglevel = "INFO"
@@ -135,3 +135,4 @@ The cats specific configuration entry point is identified by the __cats__ sectio
 	  }
 	}
 </code>
+</pre>
