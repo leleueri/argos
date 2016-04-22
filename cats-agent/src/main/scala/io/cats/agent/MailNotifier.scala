@@ -14,12 +14,14 @@ class MailNotifier extends Actor with ActorLogging {
 
   val configMail = ConfigFactory.load().getConfig(CONF_OBJECT_ENTRY_MAIL_NOTIFIER)
 
-  var to = configMail.getStringList(CONF_MAIL_NOTIFIER_RECIPIENTS).asScala
-  var from = configMail.getString(CONF_MAIL_NOTIFIER_FROM)
-  var host = configMail.getString(CONF_MAIL_NOTIFIER_SMTP)
+  val to = configMail.getStringList(CONF_MAIL_NOTIFIER_RECIPIENTS).asScala
+  val from = configMail.getString(CONF_MAIL_NOTIFIER_FROM)
+  val host = configMail.getString(CONF_MAIL_NOTIFIER_SMTP)
+  val port = Option(configMail.getString(CONF_MAIL_NOTIFIER_SMTP_PORT)).getOrElse("25")
 
   val props = new Properties();
   props.put("mail.smtp.host", host);
+  props.put("mail.smtp.port", port);
   val session = Session.getInstance(props, null);
 
   log.info("MailNotifier is running...")

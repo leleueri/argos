@@ -46,6 +46,7 @@ object Constants {
 
   val CONF_OBJECT_ENTRY_MAIL_NOTIFIER = "cats.notifiers.mail"
   val CONF_MAIL_NOTIFIER_SMTP = "smtp-host"
+  val CONF_MAIL_NOTIFIER_SMTP_PORT = "smtp-port"
   val CONF_MAIL_NOTIFIER_RECIPIENTS = "recipients"
   val CONF_MAIL_NOTIFIER_FROM = "from"
 }

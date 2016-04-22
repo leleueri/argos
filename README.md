@@ -126,6 +126,7 @@ Currently, there are only one notifier named `mail`.
 Parameter | Type | Description 
 --- | --- | ---
 smtp-host | `String` | hostname of the SMTP service
+smtp-port | `String` | port of the SMTP service
 from | `String` | The email address specified into the from header
 recipients | `List[String]` | list of recipients that will receive the notification
 
@@ -251,6 +252,7 @@ recipients | `List[String]` | list of recipients that will receive the notificat
 	  notifiers {
 		mail {
 		  smtp-host= "127.0.0.1"
+		  smtp-port= "25"
 		  from= "cassandra-agent@no-reply"
 		  recipients = ["eric.leleu@somewhere.net", "eric.leleu@somewhereelse.net"]
 		}
