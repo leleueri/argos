@@ -9,6 +9,38 @@ This tool is based on [Akka](http://akka.io/ "Akka"), if you want to configure t
 The cats specific configuration entry point is identified by the __cats__ section that contains two main entries :
 * sentinel : this section defines the configuration of each sentinel and the JMX connectivity
 * notifiers : this section defines the configuration for each notification process (currently, there are only one type of notifier *mail*)
+
+### Sentinel
+
+A sentinel is an object that control a specific information provided by the JMX interface of the Cassandra server. If the information is considered as " *wrong* ", the sentinel will will send a notification message to the `notifiers`
+
+#### Manager
+
+The sentinels are managed by an Orchestrator that needs some configuration parameters. These parameters are defined into the `manager` section.
+
+Parameter | Type | Description 
+--- | --- | ---
+jmx-host | `String` | IP on which the instance of Cassandra binds the JMX server
+jmx-port | `Integer` | Listening port of the JMX Server
+scheduler-interval | `Duration` | Duration between two Metrics validation 
+
+### LoadAvg sentinel
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+threshold | `Float` | The maximum value authorized for the LoadAvg metrics
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+
+### Dropped messages sentinel
+
+
+### Notifiers
+
+
+### Example
+
 <pre>
 <code>
 	akka {
