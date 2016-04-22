@@ -57,6 +57,8 @@ label | `String` | Label used into the notification *title*
 
 These sentinels examine the number of blocked tasks and send a notification if the result is different of 0. There are one sentinel per type of ThreadPool.
 
+**NOTE:** Blocked tasks sentinel are available since version 2.2 of cassandra
+
 * stage-counter
 * stage-gossip
 * stage-internal
