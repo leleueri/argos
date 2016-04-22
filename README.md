@@ -24,7 +24,9 @@ jmx-host | `String` | IP on which the instance of Cassandra binds the JMX server
 jmx-port | `Integer` | Listening port of the JMX Server
 scheduler-interval | `Duration` | Duration between two Metrics validation 
 
-### LoadAvg sentinel
+#### LoadAvg sentinel
+
+This sentinel examines the Load Average.
 
 Parameter | Type | Description 
 --- | --- | ---
@@ -33,7 +35,85 @@ threshold | `Float` | The maximum value authorized for the LoadAvg metrics
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
-### Dropped messages sentinel
+#### Dropped messages sentinel
+
+These sentinels examine the number of dropped messages, if the number of dropped messages change between to controls a notification is triggered. There are one sentinel per type of Messages.
+
+* dropped-counter
+* dropped-mutation
+* dropped-read 
+* dropped-read-repair 
+* dropped-range-slice 
+* dropped-request-response 
+* dropped-page-range 
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+
+#### Blocked tasks sentinel
+
+These sentinels examine the number of blocked tasks and send a notification if the result is different of 0. There are one sentinel per type of ThreadPool.
+
+* stage-counter
+* stage-gossip
+* stage-internal
+* stage-memtable
+* stage-mutation
+* stage-read
+* stage-read-repair
+* stage-request-response
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+
+#### Storage Exception
+
+This sentinel examines the number of storage exception and send a notification if the result is different of 0
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+
+#### Storage Hint
+
+This sentinel examines the number of Hinted-Handoff and send a notification if this number increases between two controls.
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+
+#### Storage Space
+
+This sentinel examines the used space on each directory declared in the Cassandra.yml. If the available space is too low, a notification is triggered.
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+threshold | `Integer` | Percentage of available space required for the data directories
+commitlog-threshold | `Integer` | Percentage of available space required for the commtilog directory
+
+#### JMX notification
+
+This sentinel send a notification if the JMX listener is informed about a ERROR or an ABORTED operation (like a repair)
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+cversion | `Float` | The version of the cassandra node (needed to interpret the JMX notification message)
 
 
 ### Notifiers
