@@ -10,7 +10,7 @@ The cats specific configuration entry point is identified by the __cats__ sectio
 * sentinel : this section defines the configuration of each sentinel and the JMX connectivity
 * notifiers : this section defines the configuration for each notification process (currently, there are only one type of notifier *mail*)
 
-
+<code>
 	akka {
 	  loglevel = "INFO"
 	}
@@ -134,3 +134,4 @@ The cats specific configuration entry point is identified by the __cats__ sectio
 		}
 	  }
 	}
+</code>
