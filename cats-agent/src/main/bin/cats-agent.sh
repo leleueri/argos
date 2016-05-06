@@ -2,7 +2,9 @@
 #
 # Startup script for Cassandra Administration Tools
 #
-export CATS_HOME=/root/test-cats
+
+# change the HOME directory according to you installation
+export CATS_HOME=/usr/share/cats
 NAME="cats-agent"
 
 . $CATS_HOME/conf/cats-env.sh
