@@ -2,6 +2,29 @@
 Cassandra Administration Tools 
 This project provides some tools to manage Cassandra Cluster.
 
+## Install
+
+First of all, package *cats* as ZIP file.
+<pre>
+<code>
+sbt universal::package-bin
+</code>
+</pre>
+
+The ZIP file will be available in the *target/universal* directory.
+
+This archive contains:
+* the startup script : cats-agent.sh 
+* a configuration directory with
+  * a bash script containing a set of variables
+  * the application.conf file
+* a directory with the cats jar
+
+Once extracted, you have to :
+* set the __CATS_HOME__ variable into the *cats-agent.sh* script, the value should be the absolute path of the directory containing the *cats-agent.sh* script
+* set the __JAVA_HOME__ variable into the *cats-env.sh* script (target must be Java 8)
+* Update the __CASSANDRA_HOME__ and the __CASSANDRA_INCLUDE__ variable into the *cats-env.sh* script if values are not correct
+* adapt the *application.conf*
 
 ## Configuration
 
