@@ -7,7 +7,7 @@ This project provides some tools to manage Cassandra Cluster.
 First of all, package *cats* as ZIP file.
 <pre>
 <code>
-sbt universal::package-bin
+sbt universal:package-bin
 </code>
 </pre>
 
