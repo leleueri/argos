@@ -18,7 +18,7 @@ import Messages._
 
 
 /**
- * The "SentinelOrchestrator" actor schedule the sentinels that analyze information provided by the JMX interface of the Cassandra Node.
+ * The "SentinelOrchestrator" actor schedule the sentinels that analyze information provided by the JMX interface of Cassandra.
  */
 class SentinelOrchestrator extends Actor with ActorLogging {
 
