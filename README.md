@@ -144,10 +144,13 @@ cversion | `Float` | The version of the cassandra node (needed to interpret the 
 ### Notifiers
 
 A notifier is an object managing the notification message send by the Sentinels.
+Each notifier configuration must have the key 'providerClass' specifying the implementation of the 'NotifierProvider' trait.
+With this trait, the provider has to implement a props method that return the "Props" object used to create the Notifier actor.
 Currently, there are only one notifier named `mail`.
 
 Parameter | Type | Description 
 --- | --- | ---
+providerClass | `String` | the provider class `io.cats.agent.notifiers.MailNotifierProvider`
 smtp-host | `String` | hostname of the SMTP service
 smtp-port | `String` | port of the SMTP service
 from | `String` | The email address specified into the from header
@@ -274,6 +277,7 @@ recipients | `List[String]` | list of recipients that will receive the notificat
 	  }
 	  notifiers {
 		mail {
+		  providerClass = "io.cats.agent.notifiers.MailNotifierProvider"
 		  smtp-host= "127.0.0.1"
 		  smtp-port= "25"
 		  from= "cassandra-agent@no-reply"

@@ -4,6 +4,7 @@ import java.lang.management.OperatingSystemMXBean
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
+import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.{StorageSpaceInfo, Notification}
@@ -12,7 +13,7 @@ import io.cats.agent.util.{JmxClient, HostnameProvider}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
-class StorageSpaceSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends Sentinel[Array[StorageSpaceInfo]] {
+class StorageSpaceSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends Sentinel[Array[StorageSpaceInfo]] {
 
   private val dataThreshold = conf.getDouble(CONF_THRESHOLD)
   private val commitlogThreshold = conf.getDouble(CONF_COMMIT_LOG_THRESHOLD)
@@ -46,7 +47,7 @@ class StorageSpaceSentinel(jmxAccess: JmxClient, handler: ActorRef, override val
          | Total Space     : ${currentInfo.totalSpace/(1024*1024)} MB
        """.stripMargin)
 
-    handler ! Notification(title, messageBody)
+    stream.publish(Notification(title, messageBody))
 
     info.foreach { storageInfo =>
       if (storageInfo.commitLog)

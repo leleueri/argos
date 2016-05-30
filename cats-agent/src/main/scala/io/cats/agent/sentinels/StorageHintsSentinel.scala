@@ -3,6 +3,7 @@ package io.cats.agent.sentinels
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
+import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.Notification
@@ -11,7 +12,7 @@ import io.cats.agent.util.{JmxClient, HostnameProvider}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
-class StorageHintsSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends Sentinel[Array[Long]] {
+class StorageHintsSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends Sentinel[Array[Long]] {
 
   private var nextReact = System.currentTimeMillis
   private var previousValue : Array[Long] = Array(0,0)
@@ -46,7 +47,7 @@ class StorageHintsSentinel(jmxAccess: JmxClient, handler: ActorRef, override val
          | Some nodes may be stopped (or there are network issues).
        """.stripMargin
 
-    handler ! Notification(title, messageBody)
+    stream.publish(Notification(title, messageBody))
     nextReact = System.currentTimeMillis + FREQUENCY
   }
 }

@@ -1,11 +1,12 @@
 package io.cats.agent.sentinels
 
 import akka.actor.ActorRef
+import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.bean.ThreadPoolStats
 import io.cats.agent.util.JmxClient
 
 
-class CounterMutationBlockedSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends BlockedSentinel(jmxAccess, handler, conf) {
+class CounterMutationBlockedSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends BlockedSentinel(jmxAccess, stream, conf) {
   override def getThreadPoolStats: ThreadPoolStats = jmxAccess.getCounterMutationStageValues()
 }

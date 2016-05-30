@@ -3,6 +3,7 @@ package io.cats.agent.sentinels
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
+import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.{Notification, StorageSpaceInfo}
@@ -11,7 +12,7 @@ import io.cats.agent.util.{JmxClient, HostnameProvider}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
-class StorageExceptionSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends Sentinel[Long] {
+class StorageExceptionSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends Sentinel[Long] {
 
   private var nextReact = System.currentTimeMillis
   private var previousValue : Long = 0
@@ -34,7 +35,7 @@ class StorageExceptionSentinel(jmxAccess: JmxClient, handler: ActorRef, override
          | You should check cassandra logs (see /var/log/cassandra/system.log or custom location).
        """.stripMargin
 
-    handler ! Notification(title, messageBody)
+    stream.publish(Notification(title, messageBody))
 
     nextReact = System.currentTimeMillis + FREQUENCY
   }

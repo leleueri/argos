@@ -3,6 +3,7 @@ package io.cats.agent.sentinels
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
+import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.{DroppedMessageStats, Notification}
@@ -11,7 +12,7 @@ import io.cats.agent.util.{JmxClient, HostnameProvider}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
-abstract class DroppedSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends Sentinel[DroppedMessageStats] {
+abstract class DroppedSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends Sentinel[DroppedMessageStats] {
 
   private var nextReact = System.currentTimeMillis
   private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
@@ -43,7 +44,7 @@ abstract class DroppedSentinel(jmxAccess: JmxClient, handler: ActorRef, override
         |Something wrong may append on this node...
       """.stripMargin
 
-    handler ! Notification(title, message)
+    stream.publish(Notification(title, message))
 
     nextReact = System.currentTimeMillis + FREQUENCY
 

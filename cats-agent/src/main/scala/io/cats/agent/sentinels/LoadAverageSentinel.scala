@@ -4,6 +4,7 @@ import java.lang.management.OperatingSystemMXBean
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
+import akka.event.EventStream
 import com.typesafe.config.Config
 
 import io.cats.agent.Constants._
@@ -13,7 +14,7 @@ import io.cats.agent.util.HostnameProvider
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
-class LoadAverageSentinel(jmxAccess: OperatingSystemMXBean, handler: ActorRef, override val conf: Config) extends Sentinel[Array[Double]] {
+class LoadAverageSentinel(jmxAccess: OperatingSystemMXBean, stream: EventStream, override val conf: Config) extends Sentinel[Array[Double]] {
 
   private val loadAvgThreshold = conf.getDouble(CONF_THRESHOLD)
   private var nextReact = System.currentTimeMillis
@@ -41,7 +42,7 @@ class LoadAverageSentinel(jmxAccess: OperatingSystemMXBean, handler: ActorRef, o
         |Something wrong may append on this node...
       """.stripMargin
 
-    handler ! Notification(title, message)
+    stream.publish(Notification(title, message))
 
     nextReact = System.currentTimeMillis + FREQUENCY
 

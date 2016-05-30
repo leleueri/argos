@@ -4,6 +4,7 @@ import java.util
 import javax.management.{ObjectName, NotificationListener}
 
 import akka.actor.ActorRef
+import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.Notification
@@ -16,7 +17,7 @@ import scala.collection.JavaConverters._
  * This class add a notification listener to the JMX MBeanServer in order to follow the progress of some action (like the repair)
  *
  */
-class InternalNotificationsSentinel(jmxAccess: JmxClient, handler: ActorRef, override val conf: Config) extends NotificationListener with Sentinel[Unit] {
+class InternalNotificationsSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends NotificationListener with Sentinel[Unit] {
 
   override def analyze(): Option[Unit] = None
   override def react(info: Unit): Unit = { }
@@ -49,7 +50,7 @@ class InternalNotificationsSentinel(jmxAccess: JmxClient, handler: ActorRef, ove
           |
           |""".stripMargin
 
-    handler ! Notification(title, messageBody)
+    stream.publish(Notification(title, messageBody))
   }
 
 }

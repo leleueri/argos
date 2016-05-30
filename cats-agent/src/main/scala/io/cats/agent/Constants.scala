@@ -44,7 +44,10 @@ object Constants {
   val CONF_COMMIT_LOG_THRESHOLD = "commitlog-threshold"
   val CONF_CASSANDRA_VERSION = "cversion"
 
+  val CONF_OBJECT_ENTRY_NOTIFIERS = "cats.notifiers"
   val CONF_OBJECT_ENTRY_MAIL_NOTIFIER = "cats.notifiers.mail"
+  val CONF_PROVIDER_CLASS_KEY = "providerClass"
+
   val CONF_MAIL_NOTIFIER_SMTP = "smtp-host"
   val CONF_MAIL_NOTIFIER_SMTP_PORT = "smtp-port"
   val CONF_MAIL_NOTIFIER_RECIPIENTS = "recipients"
