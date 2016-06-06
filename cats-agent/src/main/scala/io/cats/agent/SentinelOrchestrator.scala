@@ -12,10 +12,14 @@ import io.cats.agent.Constants._
 import io.cats.agent.notifiers.{NotifierProvider, ConsoleNotifierProvider, ConsoleNotifier, MailNotifier}
 import io.cats.agent.sentinels._
 import io.cats.agent.util.{HostnameProvider, JmxClient}
+import org.apache.cassandra.tools.NodeProbe
 import scala.concurrent.{ExecutionContext, duration}
 import scala.concurrent.duration._
 import io.cats.agent.bean.Notification
 import Messages._
+
+import scala.util.matching.Regex
+
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
 import collection.JavaConversions._
 
@@ -32,6 +36,7 @@ class SentinelOrchestrator extends Actor with ActorLogging {
 
   val jmxClient = JmxClient(configSentinel.getString(CONF_ORCHESTRATOR_JMX_HOST), configSentinel.getInt(CONF_ORCHESTRATOR_JMX_PORT))
   val osMBean = ManagementFactory.getOperatingSystemMXBean()
+  val nodeProbe = new NodeProbe(configSentinel.getString(CONF_ORCHESTRATOR_JMX_HOST), configSentinel.getInt(CONF_ORCHESTRATOR_JMX_PORT))
 
   // Start all Notifiers
   globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS).entrySet().toList.filter( _.getKey.matches("[^\\.]+\\."+CONF_PROVIDER_CLASS_KEY)).foreach(
@@ -57,10 +62,11 @@ class SentinelOrchestrator extends Actor with ActorLogging {
 
   log.info("SentinelOrchestrator is running...")
 
-
   val sentinels = {
     Array(
       new LoadAverageSentinel(osMBean, evtStream, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_LOADAVG)),
+
+      new AvailabilitySentinel(nodeProbe, evtStream, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE)),
 
       new DroppedCounterSentinel(jmxClient, evtStream, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER)),
       new DroppedMutationSentinel(jmxClient, evtStream, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION)),

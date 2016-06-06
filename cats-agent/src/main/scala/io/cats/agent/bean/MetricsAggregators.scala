@@ -10,6 +10,12 @@ case class ThreadPoolStats(`type`: String, activeTasks: Int, completedTasks: Int
  */
 case class DroppedMessageStats(`type`: String, count: Long, fifteenMinRate: Double, fiveMinRate: Double, meanRate: Double, oneMinRate: Double)
 
+/**
+ * This class contains the list of unreachable endpoints for a given consistency level and keyspace
+ */
+case class Availability(keyspace: String, consistencyLevel: String, unreachableEndpoints: Array[String])
+
+
 case class StorageSpaceInfo(path: String, usedSpace: Long, availableSpace: Long, totalSpace: Long, commitLog: Boolean) {
 
   /**

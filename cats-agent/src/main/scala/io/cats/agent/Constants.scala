@@ -15,6 +15,7 @@ object Constants {
 
   val CONF_OBJECT_ENTRY_SENTINEL = "cats.sentinel"
   val CONF_OBJECT_ENTRY_SENTINEL_LOADAVG = "cats.sentinel.load-avg"
+  val CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE = "cats.sentinel.consitency-level"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER = "cats.sentinel.dropped-counter"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION = "cats.sentinel.dropped-mutation"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ = "cats.sentinel.dropped-read"
@@ -43,6 +44,10 @@ object Constants {
   val CONF_FREQUENCY = "period"
   val CONF_COMMIT_LOG_THRESHOLD = "commitlog-threshold"
   val CONF_CASSANDRA_VERSION = "cversion"
+
+  val CONF_KEYSPACES = "keyspaces"
+  val CONF_KEYSPACE_NAME = "name"
+  val CONF_CONSISTENCY_LEVEL = "cl"
 
   val CONF_OBJECT_ENTRY_NOTIFIERS = "cats.notifiers"
   val CONF_OBJECT_ENTRY_MAIL_NOTIFIER = "cats.notifiers.mail"
