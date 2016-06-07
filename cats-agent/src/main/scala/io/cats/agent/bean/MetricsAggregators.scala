@@ -13,7 +13,7 @@ case class DroppedMessageStats(`type`: String, count: Long, fifteenMinRate: Doub
 /**
  * This class contains the list of unreachable endpoints for a given consistency level and keyspace
  */
-case class Availability(keyspace: String, consistencyLevel: String, unreachableEndpoints: Array[String])
+case class Availability(keyspace: String, consistencyLevel: String, unreachableEndpoints: List[String], tokenRange: CatsTokenRange)
 
 
 case class StorageSpaceInfo(path: String, usedSpace: Long, availableSpace: Long, totalSpace: Long, commitLog: Boolean) {

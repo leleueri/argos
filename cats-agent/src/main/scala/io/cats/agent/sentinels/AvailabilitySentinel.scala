@@ -1,16 +1,16 @@
 package io.cats.agent.sentinels
 
-import java.io.{ByteArrayInputStream, ObjectInputStream}
 import java.util.concurrent.TimeUnit
 
 import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.{CatsEndpointDetails, CatsTokenRange, Notification, Availability}
-import io.cats.agent.util.{HostnameProvider, JmxClient}
-import org.apache.cassandra.thrift.TokenRange
+import io.cats.agent.util.CommonLoggerFactory._
+import io.cats.agent.util.HostnameProvider
 import org.apache.cassandra.tools.NodeProbe
 
+import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
@@ -22,21 +22,23 @@ class AvailabilitySentinel(nodeProbe: NodeProbe, stream: EventStream, override v
   private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   override def analyze(): Option[List[Availability]] = {
-    val thisEndpoint = nodeProbe.getEndpoint
+    if (System.currentTimeMillis <= nextReact) {
+      None
+    } else {
+      val thisEndpoint = nodeProbe.getEndpoint
+      val issuePerKeyspace = (for {
+        pair <- conf.getConfigList(CONF_KEYSPACES).asScala.toList
+        ks = pair.getString(CONF_KEYSPACE_NAME)
+        cl = pair.getString(CONF_CONSISTENCY_LEVEL)
+        result = nodeProbe.describeRing(ks).asScala.map(interpretTokenRangeString(_))
+          .filter(_.endpoints.contains(thisEndpoint)) // compute only replicas set containing the current node.
+          .map(detectAvailabilityIssue(_, thisEndpoint, cl, ks))
+          .filter(_.isDefined) // keep endpoints with CL issue
+          .map(_.get)
+      } yield result).flatten
 
-    val issuePerKeyspace = for {
-      pair <- conf.getConfigList(CONF_KEYSPACES).asScala
-      ks = pair.getString(CONF_KEYSPACE_NAME)
-      cl = pair.getString(CONF_CONSISTENCY_LEVEL)
-      result = nodeProbe.describeRing(ks).asScala.map(interpretTokenRangeString(_))
-        .filter(_.endpoints.contains(thisEndpoint)) // compute only replicas set containing the current node.
-        .filterNot(mayReachCL(_, cl)) // keep endpoints with CL issue
-        .map(e => Availability(ks, cl, e.endpoints.toArray.intersect(nodeProbe.getUnreachableNodes.asScala))).toList
-    } yield result
-
-    val result = issuePerKeyspace.flatten
-
-    if (result.isEmpty || (!result.isEmpty && System.currentTimeMillis <= nextReact)) None else Some(result.toList)
+      if (issuePerKeyspace.isEmpty) None else Some(issuePerKeyspace)
+    }
   }
 
   private def interpretTokenRangeString(tokenrange: String): CatsTokenRange = {
@@ -56,30 +58,54 @@ class AvailabilitySentinel(nodeProbe: NodeProbe, stream: EventStream, override v
     cTokenRange.next().copy(endpointDetails = details.toList)
   }
 
-  private def mayReachCL(range: CatsTokenRange, cl: String) : Boolean = {
-    val unreachNodes = range.endpoints.intersect(nodeProbe.getUnreachableNodes.asScala)
-    val maxUnreachNodes = cl.toLowerCase match { // TODO manage multiDC
-      case "one" => range.endpoints.length - 1 // local_one
-      case "two" => range.endpoints.length - 2
-      case "three" => range.endpoints.length - 3
-      case "all" => 0
-      case _ => (range.endpoints.length - (1 + (range.endpoints.length/2))) // QUORUM / LOCAL_QUORUM / LOCAL_ONE
+  private def detectAvailabilityIssue(range: CatsTokenRange, connectedEndpoint: String, cl: String, ks: String) : Option[Availability] = {
+    val localDC = range.endpointDetails.filter(_.host == connectedEndpoint).head.dc
+    val consitencyLevel = cl.toLowerCase
+
+    if(sentinelLogger.isDebugEnabled) {
+      sentinelLogger.debug(this, "detectAvailabilityIssue: token=<{}>, ks=<{}>, cl=<{}>, local-dc=<{}>, allReplicas=<{}>",
+        "[" + range.start + ", " + range.end + "]",
+        ks, cl, localDC, range.endpoints.mkString(","))
     }
-    (unreachNodes.length <= maxUnreachNodes)
+//
+    val targetEndpoints =
+      if (consitencyLevel.startsWith("local")) range.endpointDetails.groupBy(_.dc)(localDC).map(_.host)
+      else range.endpoints
+
+    val unreachNodes = targetEndpoints intersect(nodeProbe.getUnreachableNodes.asScala)
+    if(sentinelLogger.isDebugEnabled) {
+      sentinelLogger.debug(this, "detectAvailabilityIssue: token=<{}>, ks=<{}>, cl=<{}>, local-dc=<{}>, targetReplicas=<{}>, unreachables=<{}>",
+        "["+ range.start + ", " + range.end +"]",
+        ks, cl, localDC,targetEndpoints.mkString(","),
+        unreachNodes.mkString(","))
+    }
+
+    val maxUnreachNodes = consitencyLevel match {
+      case "one"|"local_one" => targetEndpoints.length - 1
+      case "two" => targetEndpoints.length - 2
+      case "three" => targetEndpoints.length - 3
+      case "all" => 0
+      case _ => (targetEndpoints.length - (1 + (targetEndpoints.length/2))) // QUORUM / LOCAL_QUORUM
+    }
+
+    if (unreachNodes.length > maxUnreachNodes) {
+      Some(Availability(ks, cl, unreachNodes, range))
+    } else
+      None
   }
   
   override def react(info:  List[Availability]): Unit = {
 
     info.foreach {
       availabilityInfo =>
-        val message = s"""Cassandra Node ${HostnameProvider.hostname} may have consistency issue
+        val message = s"""Application may have consistency issue (detected by cassandra node '${HostnameProvider.hostname}')
                   |
-                  |${availabilityInfo.unreachableEndpoints.length} replicas are unreachable
+                  |Unreachable ${availabilityInfo.unreachableEndpoints.length} replica(s) for range[${availabilityInfo.tokenRange.start}, ${availabilityInfo.tokenRange.end}]
                   |
                   |Unreachable replicas : ${availabilityInfo.unreachableEndpoints.mkString("['", "', '", "']")}
                   |Keyspace : ${availabilityInfo.keyspace}
-                  |Consistency Level : ${availabilityInfo.consistencyLevel}
-                  |
+                  |Tested Consistency Level : ${availabilityInfo.consistencyLevel}
+                  |Endpoints details : ${availabilityInfo.tokenRange.endpointDetails}
                 """.stripMargin
 
         stream.publish(Notification(title, message))

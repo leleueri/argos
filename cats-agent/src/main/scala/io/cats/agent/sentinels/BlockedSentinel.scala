@@ -8,7 +8,7 @@ import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.{ThreadPoolStats, DroppedMessageStats, Notification}
 import io.cats.agent.util.{JmxClient, HostnameProvider}
-
+import io.cats.agent.util.CommonLoggerFactory._
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
@@ -21,6 +21,11 @@ abstract class BlockedSentinel(jmxAccess: JmxClient, stream: EventStream, overri
 
   override def analyze(): Option[ThreadPoolStats] = {
     val treadPool = getThreadPoolStats
+
+    if (sentinelLogger.isDebugEnabled) {
+      sentinelLogger.debug(this, "BlockedSentinel : ThreadPool=<{}>, currentlyBlockedTasks=<{}>", treadPool.`type`, treadPool.currentBlockedTasks.toString)
+    }
+
     if (treadPool.currentBlockedTasks > 0 && System.currentTimeMillis >= nextReact) {
         Some(treadPool)
     } else {

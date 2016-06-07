@@ -141,6 +141,19 @@ label | `String` | Label used into the notification *title*
 cversion | `Float` | The version of the cassandra node (needed to interpret the JMX notification message)
 
 
+#### Consitency Level
+
+This sentinel send a notification if the declared ConsistencyLevel can't be reach for a TokenRange 
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+keyspaces | `List` | List of Object to defined the expected ConsistencyLevel for a given keyspace
+
+
+
 ### Notifiers
 
 A notifier is an object managing the notification message send by the Sentinels.
@@ -273,6 +286,21 @@ recipients | `List[String]` | list of recipients that will receive the notificat
 		  level= "INFO"
 		  label= "Progress Event"
 		  cversion=2.2
+		}    
+        consitency-level {
+          enabled= true
+          level= "CRITIC"
+          label= "Consitency Level"
+          keyspaces= [
+		    {
+		      name= "keyspace1"
+		      cl= "quorum"
+		    },
+		    {
+		      name= "keyspace2"
+		      cl= "local_one"
+		    }
+		  ]
 		}
 	  }
 	  notifiers {

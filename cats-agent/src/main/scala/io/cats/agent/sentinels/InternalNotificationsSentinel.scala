@@ -8,6 +8,7 @@ import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.Notification
+import io.cats.agent.util.CommonLoggerFactory._
 import io.cats.agent.util.{JmxClient, HostnameProvider}
 
 import scala.collection.JavaConverters._
@@ -29,7 +30,9 @@ class InternalNotificationsSentinel(jmxAccess: JmxClient, stream: EventStream, o
 
   override def handleNotification(notification: javax.management.Notification, handback: scala.Any): Unit = {
     val data  = notification.getUserData.asInstanceOf[util.HashMap[String, Int]].asScala
-
+    if (sentinelLogger.isDebugEnabled) {
+      sentinelLogger.debug(this, "Receive JMX notification=<{}>", data.toString())
+    }
     if (data("type") == ERROR_STATUS ) sendErrorStatus(notification, data)
     else if (data("type") == ABORT_STATUS && conf.getDouble(CONF_CASSANDRA_VERSION) > 2.1) sendAbortStatus(notification, data)
   }

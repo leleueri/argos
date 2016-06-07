@@ -9,6 +9,7 @@ import com.typesafe.config.Config
 
 import io.cats.agent.Constants._
 import io.cats.agent.bean.Notification
+import io.cats.agent.util.CommonLoggerFactory._
 import io.cats.agent.util.HostnameProvider
 
 import scala.concurrent.duration.FiniteDuration
@@ -22,6 +23,9 @@ class LoadAverageSentinel(jmxAccess: OperatingSystemMXBean, stream: EventStream,
 
   override def analyze(): Option[Array[Double]] = {
     val loadAvg = jmxAccess.getSystemLoadAverage
+    if (sentinelLogger.isDebugEnabled) {
+      sentinelLogger.debug(this, "LoadAvg=<{}>, threshold=<{}>", loadAvg.toString, loadAvgThreshold.toString)
+    }
     if (loadAvg > loadAvgThreshold) {
       if (System.currentTimeMillis >= nextReact) {
         Some(Array(loadAvg,loadAvgThreshold))

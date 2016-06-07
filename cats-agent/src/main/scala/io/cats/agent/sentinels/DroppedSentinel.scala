@@ -7,6 +7,7 @@ import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
 import io.cats.agent.bean.{DroppedMessageStats, Notification}
+import io.cats.agent.util.CommonLoggerFactory._
 import io.cats.agent.util.{JmxClient, HostnameProvider}
 
 import scala.concurrent.duration.FiniteDuration
@@ -21,6 +22,9 @@ abstract class DroppedSentinel(jmxAccess: JmxClient, stream: EventStream, overri
 
   override def analyze(): Option[DroppedMessageStats] = {
     val droppedMsg = getDroppedMessageStats
+    if (sentinelLogger.isDebugEnabled) {
+      sentinelLogger.debug(this, "DroppedSentinel : MessageType=<{}>, onMinRate=<{}>, totalDropped=<{}>", droppedMsg.`type`, droppedMsg.oneMinRate.toString, droppedMsg.count.toString)
+    }
     if (droppedMsg.oneMinRate > 0.0 && System.currentTimeMillis >= nextReact) {
       Some(droppedMsg)
     } else {
