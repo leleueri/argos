@@ -152,7 +152,9 @@ level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 keyspaces | `List` | List of Object to defined the expected ConsistencyLevel for a given keyspace
 
-
+The "keyspace" object has two attributes :
+* name : to identify the keyspace
+* cl   : to define to expected ConsistencyLevel
 
 ### Notifiers
 
@@ -287,11 +289,11 @@ recipients | `List[String]` | list of recipients that will receive the notificat
 		  label= "Progress Event"
 		  cversion=2.2
 		}    
-        consitency-level {
-          enabled= true
-          level= "CRITIC"
-          label= "Consitency Level"
-          keyspaces= [
+	        consitency-level {
+	          enabled= true
+	          level= "CRITIC"
+	          label= "Consitency Level"
+	          keyspaces= [
 		    {
 		      name= "keyspace1"
 		      cl= "quorum"
