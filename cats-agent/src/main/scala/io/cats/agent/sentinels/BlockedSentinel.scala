@@ -50,7 +50,7 @@ abstract class BlockedSentinel(jmxAccess: JmxClient, stream: EventStream, overri
         |Something wrong may append on this node...
       """.stripMargin
 
-    stream.publish(Notification(title, message))
+    stream.publish(buildNotification(message))
 
     nextReact = System.currentTimeMillis + FREQUENCY
 

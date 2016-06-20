@@ -108,7 +108,7 @@ class AvailabilitySentinel(nodeProbe: NodeProbe, stream: EventStream, override v
                   |Endpoints details : ${availabilityInfo.tokenRange.endpointDetails}
                 """.stripMargin
 
-        stream.publish(Notification(title, message))
+        stream.publish(buildNotification(message))
     }
 
     nextReact = System.currentTimeMillis + FREQUENCY

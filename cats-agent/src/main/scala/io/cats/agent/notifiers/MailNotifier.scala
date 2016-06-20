@@ -37,7 +37,7 @@ class MailNotifier extends Notifier {
   override def notifierId: String = "mail"
 
   override def receive = {
-    case Notification(title, msg) => sendMessage(title, msg)
+    case Notification(title, msg, _, _, _) => sendMessage(title, msg)
   }
 
   def sendMessage(title: String, msg: String) : Unit = {

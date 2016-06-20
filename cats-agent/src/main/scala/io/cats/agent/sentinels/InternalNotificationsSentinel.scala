@@ -44,7 +44,7 @@ class InternalNotificationsSentinel(jmxAccess: JmxClient, stream: EventStream, o
     val percent = 100 * data("progressCount") / data("total")
     val action = notification.getSource
 
-    val messageBody =
+    val message =
       s"""${msg} for Cassandra Node ${HostnameProvider.hostname}.
           |
           |action   : ${action}
@@ -53,7 +53,7 @@ class InternalNotificationsSentinel(jmxAccess: JmxClient, stream: EventStream, o
           |
           |""".stripMargin
 
-    stream.publish(Notification(title, messageBody))
+    stream.publish(buildNotification(message))
   }
 
 }

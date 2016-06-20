@@ -112,7 +112,7 @@ class SentinelOrchestrator extends Actor with ActorLogging {
     } catch {
       case ex: ConnectException =>
         log.warning("Connection error : {}", ex.getMessage, ex);
-        evtStream.publish(Notification(s"[CRITIC] Cassandra node ${HostnameProvider.hostname} is DOWN", s"The node ${HostnameProvider.hostname} may be down!!!"))
+        evtStream.publish(Notification(s"[CRITIC] Cassandra node ${HostnameProvider.hostname} is DOWN", s"The node ${HostnameProvider.hostname} may be down!!!", "CRITIC","Cassandra node is DOWN", HostnameProvider.hostname))
         context.become(offline) // become offline. this mode try to check the metrics but call logger with debug level
       case ex: IOException =>
         log.warning("Unexpected IO Exception : {}", ex.getMessage, ex) // do we have to become offline in this case??
@@ -124,7 +124,7 @@ class SentinelOrchestrator extends Actor with ActorLogging {
       log.debug("{} received, try to reconnect", CHECK_METRICS);
       jmxClient.reconnect
       log.info("Reconnected to the cassandra node");
-      evtStream.publish(Notification(s"[INFO] Cassandra node ${HostnameProvider.hostname} is UP", s"The node ${HostnameProvider.hostname} joins the cluster"))
+      evtStream.publish(Notification(s"[INFO] Cassandra node ${HostnameProvider.hostname} is UP", s"The node ${HostnameProvider.hostname} joins the cluster", "INFO","Cassandra node is UP", HostnameProvider.hostname))
       context.unbecome // if checks succeeded, the connection is established with the Cassandra node, we can retrieve our nominal state
     } catch {
       case ex: ConnectException => log.debug("Connection error : {}", ex.getMessage);

@@ -2,6 +2,8 @@ package io.cats.agent.sentinels
 
 import com.typesafe.config.Config
 import io.cats.agent.Constants
+import io.cats.agent.bean.Notification
+import io.cats.agent.util.HostnameProvider
 
 /**
  * The sentinel analyzes information provided by the JMX interface of the Cassandra Node.
@@ -25,4 +27,6 @@ trait Sentinel [T] {
   protected def label() = conf.getString(Constants.CONF_LABEL)
 
   protected def title() = s"[${level}] [${label}] Cassandra Sentinel found something"
+
+  protected def buildNotification(msg: String) : Notification = Notification(title, msg, level, label, HostnameProvider.hostname)
 }

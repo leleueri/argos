@@ -39,7 +39,7 @@ class StorageHintsSentinel(jmxAccess: JmxClient, stream: EventStream, override v
   }
 
   override def react(info: Array[Long]): Unit = {
-    val messageBody = s"""Cassandra Node ${HostnameProvider.hostname} has some storage hints.
+    val message = s"""Cassandra Node ${HostnameProvider.hostname} has some storage hints.
          |
          | At least '${info(0)}' hints since last check
          | Currently this node's replying '${info(1)}' hints (Total Hints since startup: ${info(2)}).
@@ -47,7 +47,7 @@ class StorageHintsSentinel(jmxAccess: JmxClient, stream: EventStream, override v
          | Some nodes may be stopped (or there are network issues).
        """.stripMargin
 
-    stream.publish(Notification(title, messageBody))
+    stream.publish(buildNotification(message))
     nextReact = System.currentTimeMillis + FREQUENCY
   }
 }

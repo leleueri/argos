@@ -28,14 +28,14 @@ class StorageExceptionSentinel(jmxAccess: JmxClient, stream: EventStream, overri
   }
 
   override def react(info: Long): Unit = {
-    val messageBody = s"""Cassandra Node ${HostnameProvider.hostname} has some storage exceptions.
+    val message = s"""Cassandra Node ${HostnameProvider.hostname} has some storage exceptions.
          |
          | exceptions : ${info}
          |
          | You should check cassandra logs (see /var/log/cassandra/system.log or custom location).
        """.stripMargin
 
-    stream.publish(Notification(title, messageBody))
+    stream.publish(buildNotification(message))
 
     nextReact = System.currentTimeMillis + FREQUENCY
   }

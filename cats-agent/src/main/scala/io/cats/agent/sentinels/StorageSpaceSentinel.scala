@@ -38,7 +38,7 @@ class StorageSpaceSentinel(jmxAccess: JmxClient, stream: EventStream, override v
          |- If you add a node recently, you may have to 'clean' some partition (nodetool cleanup)
          |- You may have to increase the disk space or add some nodes.""".stripMargin
 
-    val messageBody = info.foldLeft(messageHeader)((acc: String, currentInfo : StorageSpaceInfo) => acc +
+    val message = info.foldLeft(messageHeader)((acc: String, currentInfo : StorageSpaceInfo) => acc +
       s"""
          |
          | path            : ${currentInfo.path} (commitlog: ${currentInfo.commitLog})
@@ -47,7 +47,7 @@ class StorageSpaceSentinel(jmxAccess: JmxClient, stream: EventStream, override v
          | Total Space     : ${currentInfo.totalSpace/(1024*1024)} MB
        """.stripMargin)
 
-    stream.publish(Notification(title, messageBody))
+    stream.publish(buildNotification(message))
 
     info.foreach { storageInfo =>
       if (storageInfo.commitLog)

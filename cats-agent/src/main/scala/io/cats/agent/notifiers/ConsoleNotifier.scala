@@ -19,7 +19,7 @@ class ConsoleNotifier extends Notifier {
   override def notifierId: String = "console"
 
   override def receive = {
-    case Notification(title, msg) => println(title, msg)
+    case Notification(title, msg, _, _, _) => println(title, msg)
   }
 
 }

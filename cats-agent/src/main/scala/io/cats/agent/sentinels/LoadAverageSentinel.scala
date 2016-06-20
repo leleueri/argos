@@ -46,7 +46,7 @@ class LoadAverageSentinel(jmxAccess: OperatingSystemMXBean, stream: EventStream,
         |Something wrong may append on this node...
       """.stripMargin
 
-    stream.publish(Notification(title, message))
+    stream.publish(buildNotification(message))
 
     nextReact = System.currentTimeMillis + FREQUENCY
 
