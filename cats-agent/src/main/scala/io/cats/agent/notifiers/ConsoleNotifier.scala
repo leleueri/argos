@@ -25,5 +25,6 @@ class ConsoleNotifier extends Notifier {
 }
 
 class ConsoleNotifierProvider extends NotifierProvider {
+  def actorName() : String = "ConsoleNotifier"
   def props(): Props = Props[ConsoleNotifier]
 }

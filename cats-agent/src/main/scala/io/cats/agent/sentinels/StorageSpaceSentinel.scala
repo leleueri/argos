@@ -7,13 +7,13 @@ import akka.actor.ActorRef
 import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
-import io.cats.agent.bean.{StorageSpaceInfo, Notification}
+import io.cats.agent.bean._
 import io.cats.agent.util.{JmxClient, HostnameProvider}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
-class StorageSpaceSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends Sentinel[Array[StorageSpaceInfo]] {
+class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
 
   private val dataThreshold = conf.getDouble(CONF_THRESHOLD)
   private val commitlogThreshold = conf.getDouble(CONF_COMMIT_LOG_THRESHOLD)
@@ -23,13 +23,19 @@ class StorageSpaceSentinel(jmxAccess: JmxClient, stream: EventStream, override v
 
   private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(4, TimeUnit.HOURS).toMillis)
 
-  override def analyze(): Option[Array[StorageSpaceInfo]] = {
-    val storageInfo = jmxAccess.getStorageSpaceInformation()
-    val alerts = storageInfo.filter(si => !si.commitLog && ((si.availableSpace * 100 / si.totalSpace) < dataThreshold) && (System.currentTimeMillis >= nextDataReact)) ++ storageInfo.filter(si => si.commitLog && ((si.availableSpace * 100 / si.totalSpace) < commitlogThreshold) && (System.currentTimeMillis >= nextCommitlogReact))
-    if (alerts.isEmpty) None else Some(alerts)
+
+  override def processProtocolElement: Receive = {
+
+    case CheckMetrics => if (System.currentTimeMillis >= nextDataReact || System.currentTimeMillis >= nextCommitlogReact) metricsProvider ! MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_SPACE, "")
+
+    case metrics: MetricsResponse[Array[StorageSpaceInfo]] if metrics.value.isDefined => {
+      val storageInfo = metrics.value.get
+      val alerts = storageInfo.filter(si => !si.commitLog && ((si.availableSpace * 100 / si.totalSpace) < dataThreshold) && (System.currentTimeMillis >= nextDataReact)) ++ storageInfo.filter(si => si.commitLog && ((si.availableSpace * 100 / si.totalSpace) < commitlogThreshold) && (System.currentTimeMillis >= nextCommitlogReact))
+      if (!alerts.isEmpty) react(alerts)
+    }
   }
 
-  override def react(info: Array[StorageSpaceInfo]): Unit = {
+  def react(info: Array[StorageSpaceInfo]): Unit = {
     val messageHeader =
       s"""Cassandra Node ${HostnameProvider.hostname} needs additional disk space.
          |Check the used space.
@@ -47,7 +53,7 @@ class StorageSpaceSentinel(jmxAccess: JmxClient, stream: EventStream, override v
          | Total Space     : ${currentInfo.totalSpace/(1024*1024)} MB
        """.stripMargin)
 
-    stream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(message))
 
     info.foreach { storageInfo =>
       if (storageInfo.commitLog)

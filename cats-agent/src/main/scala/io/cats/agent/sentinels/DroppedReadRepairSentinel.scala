@@ -3,9 +3,10 @@ package io.cats.agent.sentinels
 import akka.actor.ActorRef
 import akka.event.EventStream
 import com.typesafe.config.Config
-import io.cats.agent.bean.DroppedMessageStats
+import io.cats.agent.Messages
+import io.cats.agent.bean.{ActorProtocol, MetricsRequest, DroppedMessageStats}
 import io.cats.agent.util.JmxClient
 
-class DroppedReadRepairSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends DroppedSentinel(jmxAccess, stream, conf) {
-  override def getDroppedMessageStats: DroppedMessageStats = jmxAccess.getReadRepairDroppedMessage()
+class DroppedReadRepairSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends DroppedSentinel(metricsProvider, conf) {
+  override def getDroppedMessageStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_DROPPED_MESSAGES, Messages.DROPPED_MESSAGE_READ_REPAIR)
 }

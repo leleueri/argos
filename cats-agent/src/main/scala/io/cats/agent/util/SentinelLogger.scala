@@ -5,9 +5,7 @@ import akka.event.{Logging, LoggingAdapter}
 import com.typesafe.config.ConfigFactory
 
 
-abstract class CommonLogger(logger : LoggingAdapter)
-
-class SentinelLogger(logger: LoggingAdapter) extends CommonLogger(logger) {
+class CommonLogger(logger: LoggingAdapter){
 
   def debug(caller: AnyRef, message: String, args:String*) : Unit = {
     logger.debug("["+ caller.getClass.getName + "]"+ message, args.toArray)
@@ -26,11 +24,19 @@ class SentinelLogger(logger: LoggingAdapter) extends CommonLogger(logger) {
   }
 
   def isWarningEnabled = logger.isWarningEnabled
+
+
+  def error(caller: AnyRef, message: String, args:String*) : Unit = {
+    logger.error("["+ caller.getClass.getName + "]"+ message, args.toArray)
+  }
+  def error(caller: AnyRef, exception: Throwable, message: String, args:String*) : Unit = {
+    logger.error(exception, "["+ caller.getClass.getName + "]"+ message, args.toArray)
+  }
 }
 
 object CommonLoggerFactory {
 
   val system = ActorSystem("logger-system", ConfigFactory.load.getConfig("logger-system"))
-  val sentinelLogger = new SentinelLogger(Logging.getLogger(system, this))
+  val commonLogger = new CommonLogger(Logging.getLogger(system, this))
 
 }

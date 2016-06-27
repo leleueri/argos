@@ -63,5 +63,6 @@ class MailNotifier extends Notifier {
 
 
 class MailNotifierProvider extends NotifierProvider {
+  def actorName() : String = "MailNotifier"
   def props(): Props = Props[MailNotifier]
 }

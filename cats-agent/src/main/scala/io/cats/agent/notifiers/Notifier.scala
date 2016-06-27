@@ -46,6 +46,11 @@ abstract class Notifier extends Actor with ActorLogging {
  */
 trait NotifierProvider {
   /**
+   * Name of the Actor for this notifier
+   * @return
+   */
+  def actorName() : String
+  /**
    * @return configuration object to specify options for the creation of the actor Notifier
    */
   def props(): Props

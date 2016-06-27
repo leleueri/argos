@@ -3,36 +3,40 @@ package io.cats.agent.sentinels
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
-import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
-import io.cats.agent.bean.{DroppedMessageStats, Notification}
-import io.cats.agent.util.CommonLoggerFactory._
-import io.cats.agent.util.{JmxClient, HostnameProvider}
+import io.cats.agent.bean._
+import io.cats.agent.util.HostnameProvider
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
-abstract class DroppedSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends Sentinel[DroppedMessageStats] {
+abstract class DroppedSentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
 
   private var nextReact = System.currentTimeMillis
   private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
-  def getDroppedMessageStats : DroppedMessageStats
+  def getDroppedMessageStats : MetricsRequest
 
-  override def analyze(): Option[DroppedMessageStats] = {
-    val droppedMsg = getDroppedMessageStats
-    if (sentinelLogger.isDebugEnabled) {
-      sentinelLogger.debug(this, "DroppedSentinel : MessageType=<{}>, onMinRate=<{}>, totalDropped=<{}>", droppedMsg.`type`, droppedMsg.oneMinRate.toString, droppedMsg.count.toString)
-    }
-    if (droppedMsg.oneMinRate > 0.0 && System.currentTimeMillis >= nextReact) {
-      Some(droppedMsg)
-    } else {
-      None
+  override def processProtocolElement: Receive = {
+
+    case CheckMetrics => if (System.currentTimeMillis >= nextReact) metricsProvider ! getDroppedMessageStats
+
+    case metrics: MetricsResponse[DroppedMessageStats] if metrics.value.isDefined => {
+
+      val droppedMsg = metrics.value.get
+
+      if (log.isDebugEnabled) {
+        log.debug("DroppedSentinel : MessageType=<{}>, onMinRate=<{}>, totalDropped=<{}>", droppedMsg.`type`, droppedMsg.oneMinRate.toString, droppedMsg.count.toString)
+      }
+
+      if (droppedMsg.oneMinRate > 0.0) {
+        react(droppedMsg)
+      }
     }
   }
 
-  override def react(info:  DroppedMessageStats): Unit = {
+  def react(info:  DroppedMessageStats): Unit = {
 
     val message =
       s"""Cassandra Node ${HostnameProvider.hostname} may be overloaded.
@@ -48,7 +52,7 @@ abstract class DroppedSentinel(jmxAccess: JmxClient, stream: EventStream, overri
         |Something wrong may append on this node...
       """.stripMargin
 
-    stream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(message))
 
     nextReact = System.currentTimeMillis + FREQUENCY
 

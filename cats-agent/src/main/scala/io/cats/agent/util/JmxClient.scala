@@ -93,49 +93,51 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
     */
   def getStorageMetricTotalHintsInProgess() =  initStorageMetric("TotalHintsInProgress")
 
+  def getStorageHints() : Tuple2[Long, Long] = (getStorageMetricTotalHints, getStorageMetricTotalHintsInProgess())
+
   private def initStorageMetric(name: String) = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=Storage,name=${name}"),"Count").toString.toLong
 
   /**
     * @return Information about the COUNTER_MUTATION ThreadPool
     */
-  def getCounterMutationStageValues() = initStageValue("CounterMutationStage")
+  def getCounterMutationStageValues() = getStageValue("CounterMutationStage")
   /**
     * @return Information about the MUTATION ThreadPool
     */
-  def getMutationStageValues() = initStageValue("MutationStage")
+  def getMutationStageValues() = getStageValue("MutationStage")
   /**
     * @return Information about the READ_REPAIR ThreadPool
     */
-  def getReadRepairStageValues() = initStageValue("ReadRepairStage")
+  def getReadRepairStageValues() = getStageValue("ReadRepairStage")
   /**
     * @return Information about the READ ThreadPool
     */
-  def getReadStageValues() = initStageValue("ReadStage")
+  def getReadStageValues() = getStageValue("ReadStage")
   /**
     * @return Information about the REQUEST_RESPONSE ThreadPool
     */
-  def getRequestResponseStageValues() = initStageValue("RequestResponseStage")
+  def getRequestResponseStageValues() = getStageValue("RequestResponseStage")
 
-  private def initStageValue(stage: String) = initThreadPoolStageValues(stage, "request")
+  def getStageValue(stage: String) = initThreadPoolStageValues(stage, "request")
 
   /**
     * @return Information about the FlushWriter ThreadPool
     */
-  def getMemtableFlushWriterValues() = initInternalStageValue("MemtableFlushWriter")
+  def getMemtableFlushWriterValues() = getInternalStageValue("MemtableFlushWriter")
   /**
     * @return Information about the Compaction ThreadPool
     */
-  def getCompactionExecutorValues() = initInternalStageValue("CompactionExecutor")
+  def getCompactionExecutorValues() = getInternalStageValue("CompactionExecutor")
   /**
     * @return Information about the Gossip ThreadPool
     */
-  def getGossipStageValues() = initInternalStageValue("GossipStage")
+  def getGossipStageValues() = getInternalStageValue("GossipStage")
   /**
     * @return Information about the InternalResponse ThreadPool
     */
-  def getInternalResponseStageValues() = initInternalStageValue("InternalResponseStage")
+  def getInternalResponseStageValues() = getInternalStageValue("InternalResponseStage")
 
-  private def initInternalStageValue(stage: String) = initThreadPoolStageValues(stage, "internal")
+  def getInternalStageValue(stage: String) = initThreadPoolStageValues(stage, "internal")
 
   private def initThreadPoolStageValues(stage: String, path: String) : ThreadPoolStats =  {
     val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toInt
@@ -157,33 +159,33 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
   /**
     * @return Information about the COUNTER_MUTATION dropped messages
     */
-  def getCounterMutationDroppedMessage() = initDroppedMessages("COUNTER_MUTATION")
+  def getCounterMutationDroppedMessage() = getDroppedMessages("COUNTER_MUTATION")
   /**
     * @return Information about the MUTATION dropped messages
     */
-  def getMutationDroppedMessage() = initDroppedMessages("MUTATION")
+  def getMutationDroppedMessage() = getDroppedMessages("MUTATION")
   /**
     * @return Information about the PAGED_RANGE dropped messages
     */
-  def getPagedRangeDroppedMessage() = initDroppedMessages("PAGED_RANGE")
+  def getPagedRangeDroppedMessage() = getDroppedMessages("PAGED_RANGE")
   /**
     * @return Information about the RANGE_SLICE dropped messages
     */
-  def getRangeSliceDroppedMessage() = initDroppedMessages("RANGE_SLICE")
+  def getRangeSliceDroppedMessage() = getDroppedMessages("RANGE_SLICE")
   /**
     * @return Information about the READ_REPAIR dropped messages
     */
-  def getReadRepairDroppedMessage() = initDroppedMessages("READ_REPAIR")
+  def getReadRepairDroppedMessage() = getDroppedMessages("READ_REPAIR")
   /**
     * @return Information about the READ dropped messages
     */
-  def getReadDroppedMessage() = initDroppedMessages("READ")
+  def getReadDroppedMessage() = getDroppedMessages("READ")
   /**
     * @return Information about the REQUEST_RESPONSE dropped messages
     */
-  def getRequestResponseDroppedMessage() = initDroppedMessages("REQUEST_RESPONSE")
+  def getRequestResponseDroppedMessage() = getDroppedMessages("REQUEST_RESPONSE")
 
-  private def initDroppedMessages(scope: String) : DroppedMessageStats =  {
+  def getDroppedMessages(scope: String) : DroppedMessageStats =  {
     val attrNames = Array("Count", "FifteenMinuteRate", "FiveMinuteRate", "MeanRate", "OneMinuteRate")
     val values = mbeanServerCnx.getAttributes(new ObjectName(s"org.apache.cassandra.metrics:type=DroppedMessage,scope=${scope},name=Dropped"), attrNames)
 
@@ -207,6 +209,6 @@ object JmxClient {
 
   def apply(hostname: String, port: Int) : JmxClient = new JmxClient(hostname, port)
 
-  def apply(hostname: String, port: Int, user: String, pwd: String) : JmxClient = new JmxClient(hostname, port, Some(user), Some(pwd))
+  def apply(hostname: String, port: Int, user: Option[String], pwd: Option[String]) : JmxClient = new JmxClient(hostname, port, user, pwd)
 
 }

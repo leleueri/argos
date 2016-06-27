@@ -1,15 +1,10 @@
 package io.cats.agent.sentinels
 
-import java.util
-import javax.management.{ObjectName, NotificationListener}
-
-import akka.actor.ActorRef
-import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
-import io.cats.agent.bean.Notification
+import io.cats.agent.bean.JmxNotification
 import io.cats.agent.util.CommonLoggerFactory._
-import io.cats.agent.util.{JmxClient, HostnameProvider}
+import io.cats.agent.util.HostnameProvider
 
 import scala.collection.JavaConverters._
 /**
@@ -18,23 +13,24 @@ import scala.collection.JavaConverters._
  * This class add a notification listener to the JMX MBeanServer in order to follow the progress of some action (like the repair)
  *
  */
-class InternalNotificationsSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends NotificationListener with Sentinel[Unit] {
+class InternalNotificationsSentinel(override val conf: Config) extends Sentinel {
 
-  override def analyze(): Option[Unit] = None
-  override def react(info: Unit): Unit = { }
-  jmxAccess.addNotificationListener(new ObjectName("org.apache.cassandra.db:type=StorageService"), this)
 
   // TODO use the ProgressEventType enum when the v2.1 will be depreciated
   val ERROR_STATUS = 2
   val ABORT_STATUS = 3
 
-  override def handleNotification(notification: javax.management.Notification, handback: scala.Any): Unit = {
-    val data  = notification.getUserData.asInstanceOf[util.HashMap[String, Int]].asScala
-    if (sentinelLogger.isDebugEnabled) {
-      sentinelLogger.debug(this, "Receive JMX notification=<{}>", data.toString())
-    }
-    if (data("type") == ERROR_STATUS ) sendErrorStatus(notification, data)
-    else if (data("type") == ABORT_STATUS && conf.getDouble(CONF_CASSANDRA_VERSION) > 2.1) sendAbortStatus(notification, data)
+
+  this.context.system.eventStream.subscribe(this.self, classOf[JmxNotification])
+
+  override def processProtocolElement: Receive = {
+    case JmxNotification(notification) =>
+      val data = notification.getUserData.asInstanceOf[java.util.HashMap[String, Int]].asScala
+      if (commonLogger.isDebugEnabled) {
+        commonLogger.debug(this, "Receive JMX notification=<{}>", data.toString())
+      }
+      if (data("type") == ERROR_STATUS ) sendErrorStatus(notification, data)
+      else if (data("type") == ABORT_STATUS && conf.getDouble(CONF_CASSANDRA_VERSION) > 2.1) sendAbortStatus(notification, data)
   }
 
   def sendErrorStatus(notification: javax.management.Notification, data: collection.mutable.Map[String, Int]) = sendStatus(notification, data, "A progess has failed ")
@@ -46,14 +42,14 @@ class InternalNotificationsSentinel(jmxAccess: JmxClient, stream: EventStream, o
 
     val message =
       s"""${msg} for Cassandra Node ${HostnameProvider.hostname}.
-          |
-          |action   : ${action}
+                                                                  |
+                                                                  |action   : ${action}
           |progress : ${percent}%
-          |notification : ${notification}
+                                  |notification : ${notification}
           |
           |""".stripMargin
 
-    stream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(message))
   }
 
 }

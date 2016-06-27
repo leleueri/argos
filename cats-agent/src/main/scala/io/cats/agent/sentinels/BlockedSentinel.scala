@@ -6,34 +6,38 @@ import akka.actor.ActorRef
 import akka.event.EventStream
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
-import io.cats.agent.bean.{ThreadPoolStats, DroppedMessageStats, Notification}
-import io.cats.agent.util.{JmxClient, HostnameProvider}
-import io.cats.agent.util.CommonLoggerFactory._
+import io.cats.agent.bean._
+import io.cats.agent.util.HostnameProvider
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
-abstract class BlockedSentinel(jmxAccess: JmxClient, stream: EventStream, override val conf: Config) extends Sentinel[ThreadPoolStats] {
+abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
 
   private var nextReact = System.currentTimeMillis
   private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
-  def getThreadPoolStats : ThreadPoolStats
+  def getThreadPoolStats : MetricsRequest
 
-  override def analyze(): Option[ThreadPoolStats] = {
-    val treadPool = getThreadPoolStats
+  override def processProtocolElement: Receive = {
 
-    if (sentinelLogger.isDebugEnabled) {
-      sentinelLogger.debug(this, "BlockedSentinel : ThreadPool=<{}>, currentlyBlockedTasks=<{}>", treadPool.`type`, treadPool.currentBlockedTasks.toString)
-    }
+    case CheckMetrics => if (System.currentTimeMillis >= nextReact) metricsProvider ! getThreadPoolStats
+    case metrics: MetricsResponse[ThreadPoolStats] if metrics.value.isDefined => {
 
-    if (treadPool.currentBlockedTasks > 0 && System.currentTimeMillis >= nextReact) {
+      val treadPool = metrics.value.get
+
+      if (log.isDebugEnabled) {
+        log.debug("BlockedSentinel : ThreadPool=<{}>, currentlyBlockedTasks=<{}>", treadPool.`type`, treadPool.currentBlockedTasks.toString)
+      }
+
+      if (treadPool.currentBlockedTasks > 0 && System.currentTimeMillis >= nextReact) {
         Some(treadPool)
-    } else {
-      None
+      } else {
+        None
+      }
     }
   }
 
-  override def react(info:  ThreadPoolStats): Unit = {
+  def react(info:  ThreadPoolStats): Unit = {
 
     val message =
       s"""Cassandra Node ${HostnameProvider.hostname} may be overloaded.
@@ -50,7 +54,7 @@ abstract class BlockedSentinel(jmxAccess: JmxClient, stream: EventStream, overri
         |Something wrong may append on this node...
       """.stripMargin
 
-    stream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(message))
 
     nextReact = System.currentTimeMillis + FREQUENCY
 

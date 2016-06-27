@@ -1,10 +1,13 @@
 package io.cats.agent
 
-import akka.actor.{Props, ActorSystem}
+import akka.actor.{ActorPath, Props, ActorSystem}
 import Constants._
 import akka.pattern.BackoffSupervisor
-import io.cats.agent.util.HostnameProvider
-import scala.concurrent.duration.FiniteDuration
+import com.typesafe.config.ConfigFactory
+import io.cats.agent.notifiers.NotifierProvider
+import io.cats.agent.util.CommonLoggerFactory
+// to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
+import collection.JavaConversions._
 
 /**
  * Created by eric on 26/01/16.
@@ -13,17 +16,26 @@ object Launcher extends App {
 
   val system = ActorSystem(ACTOR_SYSTEM)
 
-  // start the sentinel orchestrator
-  //val sentinel = system.actorOf(Props[SentinelOrchestrator], name = s"sentinel-${HostnameProvider.hostname}")
+  // Start all Notifiers
+  ConfigFactory.load().getConfig(CONF_OBJECT_ENTRY_NOTIFIERS).entrySet().toList.filter(_.getKey.matches("[^\\.]+\\." + CONF_PROVIDER_CLASS_KEY)).foreach(
+    confValue => {
+      try {
+        CommonLoggerFactory.commonLogger.info(this, "Initialize '{}' notifier", confValue.getKey)
+        val providerClass: Any = Class.forName(confValue.getValue.unwrapped().asInstanceOf[String]).newInstance()
+        system.actorOf(providerClass.asInstanceOf[NotifierProvider].props, confValue.getKey)
+      } catch {
+        case e: Exception =>
+          CommonLoggerFactory.commonLogger.error(this, e, "Actor system will terminate, unable to initialize the '{}' notifier : '{}'.", confValue.getKey, e.getMessage)
+          system.terminate()
+      }
+    }
+  )
 
-  //  instead of a simple Orchestrator startup, we use the BackOffSupervisor in order to restart the
-  // orchestrator in case of error (ex: cassandra node not available on agent startup)
-  val supervisor = BackoffSupervisor.props(
-      Props[SentinelOrchestrator],
-      childName = s"sentinel-${HostnameProvider.hostname}",
-      minBackoff = FiniteDuration(30, "seconds"),
-      maxBackoff = FiniteDuration(60, "seconds"),
-      randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
-    )
-  system.actorOf(supervisor, name = "sentinelSupervisor")
+  // start the Sentinel Orchestrator (this actor launches MetricsProviders, sentinels... and schedule the sentinel processing)
+  system.actorOf(Props[SentinelOrchestrator], name = "SentinelOrchestrator")
+
+  /*
+    //system.actorOf(Props[SnapshotExecutor], name = "snapshot-executor")
+    system.actorSelection("akka.tcp://Cats@127.0.0.2:2552/user/snapshot-executor") ! SnapshotCmd("TEST ELE 1 ")
+    system.actorSelection("akka.tcp://Cats@127.0.0.1:2552/user/snapshot-executor") ! SnapshotCmd("TEST ELE 2 ")*/
 }
