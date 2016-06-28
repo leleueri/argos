@@ -40,7 +40,7 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
   override def receive: Receive = {
     case CheckNodeStatus => log.debug("Node is online, ignore the ping message")
     case req : MetricsRequest => {
-      log.info(s"MetricsProvider receives ${req}")
+      log.debug(s"MetricsProvider receives ${req}")
       try {
 
         req match {
@@ -69,7 +69,10 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
           log.warning("Unexpected IO Exception : {}", ex.getMessage, ex) // do we have to become offline in this case??
       }
     }
-
+    case AvailabilityRequirements(ks, cl) => {
+      log.debug(s"MetricsProvider receives Availability(${ks}, ${cl})")
+      checkAvailability(sender(), ks, cl)
+    }
   }
 
   def offline : Receive = {
@@ -104,7 +107,6 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
     context.system.eventStream.publish(JmxNotification(notification))
   }
 
-
   def checkAvailability(sender: ActorRef, keyspace: String, consistencyLevel: String): Unit = {
     val listOfAvailability = nodeProbe.describeRing(keyspace).asScala.map(interpretTokenRangeString(_))
       .filter(_.endpoints.contains(thisEndpoint)) // compute only replicas set containing the current node.
@@ -137,7 +139,7 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
     val consitencyLevel = cl.toLowerCase
 
     if(log.isDebugEnabled) {
-      log.debug("detectAvailabilityIssue: token=<"+ range.start +", " + range.end +">, ks=<{}>, cl=<{}>, local-dc=<{}>, allReplicas=<{}>",
+      log.debug("exec detectAvailabilityIssue: token=<"+ range.start +", " + range.end +">, ks=<{}>, cl=<{}>, local-dc=<{}>, allReplicas=<{}>",
         ks, cl, localDC, range.endpoints.mkString(","))
     }
     //
@@ -146,11 +148,6 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
       else range.endpoints
 
     val unreachNodes = targetEndpoints intersect(nodeProbe.getUnreachableNodes.asScala)
-    if(log.isDebugEnabled) {
-      log.debug("detectAvailabilityIssue: token=<["+ range.start +", " + range.end +"]>, ks=<"+ks+">, cl=<{}>, local-dc=<{}>, targetReplicas=<{}>, unreachables=<{}>",
-        cl, localDC,targetEndpoints.mkString(","),
-        unreachNodes.mkString(","))
-    }
 
     val maxUnreachNodes = consitencyLevel match {
       case "one"|"local_one" => targetEndpoints.length - 1
@@ -161,6 +158,11 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
     }
 
     if (unreachNodes.length > maxUnreachNodes) {
+      if(log.isDebugEnabled) {
+        log.debug("FOUND AvailabilityIssue: token=<["+ range.start +", " + range.end +"]>, ks=<"+ks+">, cl=<{}>, local-dc=<{}>, targetReplicas=<{}>, unreachables=<{}>",
+          cl, localDC,targetEndpoints.mkString(","),
+          unreachNodes.mkString(","))
+      }
       Some(Availability(ks, cl, unreachNodes, range))
     } else
       None

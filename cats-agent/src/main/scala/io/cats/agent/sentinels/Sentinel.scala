@@ -35,4 +35,8 @@ abstract class Sentinel extends Actor with ActorLogging {
 
   protected def buildNotification(msg: String) : Notification = Notification(title, msg, level, label, HostnameProvider.hostname)
 
+  @throws[Exception](classOf[Exception])
+  override def preStart(): Unit = {
+    this.context.system.eventStream.subscribe(this.self, classOf[CheckMetrics])
+  }
 }

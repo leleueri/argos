@@ -36,7 +36,6 @@ abstract class Notifier extends Actor with ActorLogging {
   notificationChannels().foreach{ channel =>
     this.context.system.eventStream.subscribe(this.self, channel)
   }
-
 }
 
 /**

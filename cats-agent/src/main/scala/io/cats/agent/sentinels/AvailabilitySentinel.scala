@@ -24,12 +24,15 @@ class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: Con
 
 
   override def processProtocolElement: Receive = {
-    case CheckMetrics => if (System.currentTimeMillis >= nextReact) {
-      for {
+    case CheckMetrics() => if (System.currentTimeMillis >= nextReact) {
+      val tt = for {
         pair <- conf.getConfigList(CONF_KEYSPACES).asScala.toList
         ks = pair.getString(CONF_KEYSPACE_NAME)
         cl = pair.getString(CONF_CONSISTENCY_LEVEL)
-      } yield (metricsProvider ! AvailabilityRequirements(ks, cl))
+      } yield AvailabilityRequirements(ks, cl)
+      tt.foreach{
+        cc => metricsProvider ! cc
+      }
     }
     case AvailabilityIssue(issues) => react(issues)
   }

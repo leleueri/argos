@@ -20,7 +20,7 @@ class StorageExceptionSentinel(val metricsProvider: ActorRef, override val conf:
 
   override def processProtocolElement: Receive = {
 
-    case CheckMetrics => if (System.currentTimeMillis >= nextReact) metricsProvider ! MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_EXCEPTION, "")
+    case CheckMetrics() => if (System.currentTimeMillis >= nextReact) metricsProvider ! MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_EXCEPTION, "")
 
     case metrics: MetricsResponse[Long] if metrics.value.isDefined => {
       val storageExc = metrics.value.get

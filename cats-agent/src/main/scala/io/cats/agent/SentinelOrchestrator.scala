@@ -25,48 +25,44 @@ class SentinelOrchestrator extends Actor with ActorLogging {
 
   val globalConfig = ConfigFactory.load()
 
-  val configSentinel = globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_ORCHESTRATOR)
-
+  val configJmx = globalConfig.getConfig(CONF_OBJECT_ENTRY_METRICS)
   // TODO manage User/PWD
-  val metricsProvider = context.actorOf(Props(classOf[MetricsProvider], configSentinel.getString(CONF_ORCHESTRATOR_JMX_HOST), configSentinel.getInt(CONF_ORCHESTRATOR_JMX_PORT), None, None))
+  val metricsProvider = context.actorOf(Props(classOf[MetricsProvider], configJmx.getString(CONF_ORCHESTRATOR_JMX_HOST), configJmx.getInt(CONF_ORCHESTRATOR_JMX_PORT), None, None))
 
+  context.actorOf(Props(classOf[LoadAverageSentinel], globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_LOADAVG)), name = "LoadAverageSentinel")
+
+  context.actorOf(Props(classOf[DroppedCounterSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER)), name = "DroppedCounterSentinel")
+  context.actorOf(Props(classOf[DroppedMutationSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION)), name = "DroppedMutationSentinel")
+  context.actorOf(Props(classOf[DroppedReadSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ)), name = "DroppedReadSentinel")
+  context.actorOf(Props(classOf[DroppedReadRepairSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ_REPAIR)), name = "DroppedReadRepairSentinel")
+  context.actorOf(Props(classOf[DroppedPageRangeSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_PAGE)), name = "DroppedPageRangeSentinel")
+  context.actorOf(Props(classOf[DroppedRangeSliceSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE)), name = "DroppedRangeSliceSentinel")
+  context.actorOf(Props(classOf[DroppedRequestResponseSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP)), name = "DroppedRequestResponseSentinel")
+
+  context.actorOf(Props(classOf[CounterMutationBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_COUNTER_MUTATION)), name = "CounterMutationBlockedSentinel")
+  context.actorOf(Props(classOf[GossipBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_GOSSIP)), name = "GossipBlockedSentinel")
+  context.actorOf(Props(classOf[InternalResponseBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_INTERNAL)), name = "InternalResponseBlockedSentinel")
+  context.actorOf(Props(classOf[MemtableFlusherBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MEMTABLE)), name = "MemtableFlusherBlockedSentinel")
+  context.actorOf(Props(classOf[MutationBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MUTATION)), name = "MutationBlockedSentinel")
+  context.actorOf(Props(classOf[ReadBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ)), name = "ReadBlockedSentinel")
+  context.actorOf(Props(classOf[ReadRepairBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ_REPAIR)), name = "ReadRepairBlockedSentinel")
+  context.actorOf(Props(classOf[RequestResponseBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_REQUEST_RESPONSE)), name = "RequestResponseBlockedSentinel")
+
+  context.actorOf(Props(classOf[StorageSpaceSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_SPACE)), name = "StorageSpaceSentinel")
+  context.actorOf(Props(classOf[StorageHintsSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_HINTS)), name = "StorageHintsSentinel")
+  context.actorOf(Props(classOf[StorageExceptionSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_EXCEPTION)), name = "StorageExceptionSentinel")
+
+  context.actorOf(Props(classOf[InternalNotificationsSentinel], globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_JMX_NOTIFICATION)), name = "InternalNotificationsSentinel")
+
+  context.actorOf(Props(classOf[AvailabilitySentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE)), name = "AvailabilitySentinel")
 
   // initialize the frequency of metrics control
   context.system.scheduler.schedule(1 second,
-    Duration.create(configSentinel.getDuration(CONF_ORCHESTRATOR_INTERVAL).getSeconds, TimeUnit.SECONDS),
+    Duration.create(globalConfig.getDuration(CONF_ORCHESTRATOR_INTERVAL).getSeconds, TimeUnit.SECONDS),
     self,
     CHECK_METRICS)(ExecutionContext.fromExecutor(Executors.newSingleThreadScheduledExecutor()))
 
   log.info("SentinelOrchestrator is running...")
-
-  Array(context.actorOf(Props(classOf[LoadAverageSentinel], globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_LOADAVG)), name = "LoadAverageSentinel"),
-
-  context.actorOf(Props(classOf[DroppedCounterSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER)), name = "DroppedCounterSentinel"),
-  context.actorOf(Props(classOf[DroppedMutationSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION)), name = "DroppedMutationSentinel"),
-  context.actorOf(Props(classOf[DroppedReadSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ)), name = "DroppedReadSentinel"),
-  context.actorOf(Props(classOf[DroppedReadRepairSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ_REPAIR)), name = "DroppedReadRepairSentinel"),
-  context.actorOf(Props(classOf[DroppedPageRangeSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_PAGE)), name = "DroppedPageRangeSentinel"),
-  context.actorOf(Props(classOf[DroppedRangeSliceSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE)), name = "DroppedRangeSliceSentinel"),
-  context.actorOf(Props(classOf[DroppedRequestResponseSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP)), name = "DroppedRequestResponseSentinel"),
-
-  context.actorOf(Props(classOf[CounterMutationBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_COUNTER_MUTATION)), name = "CounterMutationBlockedSentinel"),
-  context.actorOf(Props(classOf[GossipBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_GOSSIP)), name = "GossipBlockedSentinel"),
-  context.actorOf(Props(classOf[InternalResponseBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_INTERNAL)), name = "InternalResponseBlockedSentinel"),
-  context.actorOf(Props(classOf[MemtableFlusherBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MEMTABLE)), name = "MemtableFlusherBlockedSentinel"),
-  context.actorOf(Props(classOf[MutationBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MUTATION)), name = "MutationBlockedSentinel"),
-  context.actorOf(Props(classOf[ReadBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ)), name = "ReadBlockedSentinel"),
-  context.actorOf(Props(classOf[ReadRepairBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ_REPAIR)), name = "ReadRepairBlockedSentinel"),
-  context.actorOf(Props(classOf[RequestResponseBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_REQUEST_RESPONSE)), name = "RequestResponseBlockedSentinel"),
-
-  context.actorOf(Props(classOf[StorageSpaceSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_SPACE)), name = "StorageSpaceSentinel"),
-  context.actorOf(Props(classOf[StorageHintsSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_HINTS)), name = "StorageHintsSentinel"),
-  context.actorOf(Props(classOf[StorageExceptionSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_EXCEPTION)), name = "StorageExceptionSentinel"),
-
-  context.actorOf(Props(classOf[InternalNotificationsSentinel], globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_JMX_NOTIFICATION)), name = "InternalNotificationsSentinel"),
-
-  context.actorOf(Props(classOf[AvailabilitySentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE)), name = "AvailabilitySentinel")
-
-  ).foreach( evtStream.subscribe(_, classOf[CheckMetrics]))
 
   override def receive = {
     case CHECK_METRICS => processControls
@@ -80,6 +76,6 @@ class SentinelOrchestrator extends Actor with ActorLogging {
 
   private def processControls: Unit = {
       log.debug("{} received", CHECK_METRICS);
-      evtStream.publish(CheckMetrics)
+      evtStream.publish(CheckMetrics())
   }
 }

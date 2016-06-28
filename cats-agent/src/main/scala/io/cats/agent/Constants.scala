@@ -8,8 +8,10 @@ object Constants {
   val ACTOR_SYSTEM = "Cats"
 
 
-  val CONF_OBJECT_ENTRY_SENTINEL_ORCHESTRATOR = "cats.sentinel.manager"
-  val CONF_ORCHESTRATOR_INTERVAL = "scheduler-interval"
+  val CONF_ORCHESTRATOR_INTERVAL = "cats.scheduler-interval"
+
+
+  val CONF_OBJECT_ENTRY_METRICS = "cats.metrics"
   val CONF_ORCHESTRATOR_JMX_HOST = "jmx-host"
   val CONF_ORCHESTRATOR_JMX_PORT = "jmx-port"
 

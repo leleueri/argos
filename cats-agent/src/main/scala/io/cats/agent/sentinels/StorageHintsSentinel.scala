@@ -27,7 +27,7 @@ class StorageHintsSentinel(val metricsProvider: ActorRef, override val conf: Con
   }
   override def processProtocolElement: Receive = {
 
-    case CheckMetrics => if (System.currentTimeMillis >= nextReact) metricsProvider ! MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_HINTS, "")
+    case CheckMetrics() => if (System.currentTimeMillis >= nextReact) metricsProvider ! MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_HINTS, "")
 
     case metrics: MetricsResponse[Tuple2[Long, Long]] if metrics.value.isDefined => {
 

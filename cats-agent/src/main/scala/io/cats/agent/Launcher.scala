@@ -5,7 +5,10 @@ import Constants._
 import akka.pattern.BackoffSupervisor
 import com.typesafe.config.ConfigFactory
 import io.cats.agent.notifiers.NotifierProvider
+import io.cats.agent.sentinels._
 import io.cats.agent.util.CommonLoggerFactory
+import io.cats.agent.workers.MetricsProvider
+
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
 import collection.JavaConversions._
 
@@ -34,7 +37,7 @@ object Launcher extends App {
   // start the Sentinel Orchestrator (this actor launches MetricsProviders, sentinels... and schedule the sentinel processing)
   system.actorOf(Props[SentinelOrchestrator], name = "SentinelOrchestrator")
 
-  /*
+   /*
     //system.actorOf(Props[SnapshotExecutor], name = "snapshot-executor")
     system.actorSelection("akka.tcp://Cats@127.0.0.2:2552/user/snapshot-executor") ! SnapshotCmd("TEST ELE 1 ")
     system.actorSelection("akka.tcp://Cats@127.0.0.1:2552/user/snapshot-executor") ! SnapshotCmd("TEST ELE 2 ")*/

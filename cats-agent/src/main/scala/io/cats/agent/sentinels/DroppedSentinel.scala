@@ -20,7 +20,7 @@ abstract class DroppedSentinel(val metricsProvider: ActorRef, val conf: Config) 
 
   override def processProtocolElement: Receive = {
 
-    case CheckMetrics => if (System.currentTimeMillis >= nextReact) metricsProvider ! getDroppedMessageStats
+    case CheckMetrics() => if (System.currentTimeMillis >= nextReact) metricsProvider ! getDroppedMessageStats
 
     case metrics: MetricsResponse[DroppedMessageStats] if metrics.value.isDefined => {
 

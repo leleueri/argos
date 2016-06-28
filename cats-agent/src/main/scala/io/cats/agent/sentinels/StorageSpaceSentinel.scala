@@ -26,7 +26,7 @@ class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Con
 
   override def processProtocolElement: Receive = {
 
-    case CheckMetrics => if (System.currentTimeMillis >= nextDataReact || System.currentTimeMillis >= nextCommitlogReact) metricsProvider ! MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_SPACE, "")
+    case CheckMetrics() => if (System.currentTimeMillis >= nextDataReact || System.currentTimeMillis >= nextCommitlogReact) metricsProvider ! MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_SPACE, "")
 
     case metrics: MetricsResponse[Array[StorageSpaceInfo]] if metrics.value.isDefined => {
       val storageInfo = metrics.value.get

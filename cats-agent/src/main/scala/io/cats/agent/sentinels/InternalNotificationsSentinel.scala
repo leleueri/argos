@@ -2,7 +2,7 @@ package io.cats.agent.sentinels
 
 import com.typesafe.config.Config
 import io.cats.agent.Constants._
-import io.cats.agent.bean.JmxNotification
+import io.cats.agent.bean.{CheckMetrics, JmxNotification}
 import io.cats.agent.util.CommonLoggerFactory._
 import io.cats.agent.util.HostnameProvider
 
@@ -24,6 +24,7 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
   this.context.system.eventStream.subscribe(this.self, classOf[JmxNotification])
 
   override def processProtocolElement: Receive = {
+    case CheckMetrics() => {}
     case JmxNotification(notification) =>
       val data = notification.getUserData.asInstanceOf[java.util.HashMap[String, Int]].asScala
       if (commonLogger.isDebugEnabled) {

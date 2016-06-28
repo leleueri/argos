@@ -20,7 +20,7 @@ class LoadAverageSentinel(override val conf: Config) extends Sentinel {
   private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   override def processProtocolElement: Receive = {
-    case CheckMetrics => analyze
+    case CheckMetrics() => analyze
   }
 
   def analyze() : Unit = {

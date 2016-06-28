@@ -20,7 +20,7 @@ abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: Config) 
 
   override def processProtocolElement: Receive = {
 
-    case CheckMetrics => if (System.currentTimeMillis >= nextReact) metricsProvider ! getThreadPoolStats
+    case CheckMetrics() => if (System.currentTimeMillis >= nextReact) metricsProvider ! getThreadPoolStats
     case metrics: MetricsResponse[ThreadPoolStats] if metrics.value.isDefined => {
 
       val treadPool = metrics.value.get
