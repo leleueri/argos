@@ -26,13 +26,13 @@ class TestDroppedSentinel extends TestKit(ActorSystem("TestDroppedSentinel")) wi
     notificationProbe.ref,
     classOf[Notification])
 
-  val droppedCounterActor = system.actorOf(Props(classOf[DroppedCounterSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER)), name = "DroppedCounterSentinel")
-  val droppedMutationActor = system.actorOf(Props(classOf[DroppedMutationSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION)), name = "DroppedMutationSentinel")
-  val droppedReadActor = system.actorOf(Props(classOf[DroppedReadSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ)), name = "DroppedReadSentinel")
-  val droppedReadRepairActor = system.actorOf(Props(classOf[DroppedReadRepairSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ_REPAIR)), name = "DroppedReadRepairSentinel")
-  val droppedPageActor = system.actorOf(Props(classOf[DroppedPageRangeSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_PAGE)), name = "DroppedPageRangeSentinel")
-  val droppedRangeActor = system.actorOf(Props(classOf[DroppedRangeSliceSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE)), name = "DroppedRangeSliceSentinel")
-  val droppedReqRespActor = system.actorOf(Props(classOf[DroppedRequestResponseSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP)), name = "DroppedRequestResponseSentinel")
+  val droppedCounterActor = system.actorOf(Props(classOf[DroppedCounterSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER)))
+  val droppedMutationActor = system.actorOf(Props(classOf[DroppedMutationSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION)))
+  val droppedReadActor = system.actorOf(Props(classOf[DroppedReadSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ)))
+  val droppedReadRepairActor = system.actorOf(Props(classOf[DroppedReadRepairSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ_REPAIR)))
+  val droppedPageActor = system.actorOf(Props(classOf[DroppedPageRangeSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_PAGE)))
+  val droppedRangeActor = system.actorOf(Props(classOf[DroppedRangeSliceSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE)))
+  val droppedReqRespActor = system.actorOf(Props(classOf[DroppedRequestResponseSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP)))
 
   override def afterAll() {
     system.terminate()

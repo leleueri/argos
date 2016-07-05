@@ -15,7 +15,7 @@ import scala.util.Try
 class StorageHintsSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
 
   private var nextReact = System.currentTimeMillis
-  private var previousValue : Array[Long] = Array(0,0)
+  private var previousValue : Array[Long] = Array(-1,-1)
   private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   override def receive: Receive = {
@@ -34,7 +34,7 @@ class StorageHintsSentinel(val metricsProvider: ActorRef, override val conf: Con
       val totalHints = metrics.value.get._1
       val hintsInProgress = metrics.value.get._2
 
-      val notificationData = Array(totalHints - previousValue(0), hintsInProgress, totalHints)
+      val notificationData = Array(totalHints - math.max(0, previousValue(0)),  hintsInProgress, totalHints)
 
       if ((notificationData(0) > 0) || (notificationData(1) > 0)) {
         if (previousValue(0) == 0) {

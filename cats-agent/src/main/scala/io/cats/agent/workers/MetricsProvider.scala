@@ -47,9 +47,9 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
           case MetricsRequest(ACTION_CHECK_DROPPED_MESSAGES, msgType) => sender ! MetricsResponse(ACTION_CHECK_DROPPED_MESSAGES, Some(jmxClient.getDroppedMessages(msgType)))
           case MetricsRequest(ACTION_CHECK_INTERNAL_STAGE, msgType) => sender ! MetricsResponse(ACTION_CHECK_INTERNAL_STAGE, Some(jmxClient.getInternalStageValue(msgType)))
           case MetricsRequest(ACTION_CHECK_STAGE, msgType) => sender ! MetricsResponse(ACTION_CHECK_STAGE, Some(jmxClient.getStageValue(msgType)))
-          case MetricsRequest(ACTION_CHECK_STORAGE_SPACE, msgType) => sender ! MetricsResponse(ACTION_CHECK_STAGE, Some(jmxClient.getStorageSpaceInformation()))
-          case MetricsRequest(ACTION_CHECK_STORAGE_HINTS, msgType) => sender ! MetricsResponse(ACTION_CHECK_STAGE, Some(jmxClient.getStorageHints()))
-          case MetricsRequest(ACTION_CHECK_STORAGE_EXCEPTION, msgType) => sender ! MetricsResponse(ACTION_CHECK_STAGE, Some(jmxClient.getStorageMetricExceptions()))
+          case MetricsRequest(ACTION_CHECK_STORAGE_SPACE, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_SPACE, Some(jmxClient.getStorageSpaceInformation()))
+          case MetricsRequest(ACTION_CHECK_STORAGE_HINTS, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_HINTS, Some(jmxClient.getStorageHints()))
+          case MetricsRequest(ACTION_CHECK_STORAGE_EXCEPTION, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_EXCEPTION, Some(jmxClient.getStorageMetricExceptions()))
 
         }
 
