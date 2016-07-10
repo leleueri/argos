@@ -34,6 +34,13 @@ class TestStorageHintsSentinel extends TestKit(ActorSystem("TestStorageHintsSent
     testableActor ! CheckMetrics()
 
     metricsProviderProbe.expectMsg(MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_HINTS, ""))
+    metricsProviderProbe.reply(MetricsResponse(ACTION_CHECK_STORAGE_HINTS, Some(new java.lang.Long(11100), new java.lang.Long(211))))
+
+    notificationProbe.expectNoMsg()
+
+    testableActor ! CheckMetrics()
+
+    metricsProviderProbe.expectMsg(MetricsRequest(ActorProtocol.ACTION_CHECK_STORAGE_HINTS, ""))
     metricsProviderProbe.reply(MetricsResponse(ACTION_CHECK_STORAGE_HINTS, Some(new java.lang.Long(0), new java.lang.Long(0))))
 
     notificationProbe.expectNoMsg()

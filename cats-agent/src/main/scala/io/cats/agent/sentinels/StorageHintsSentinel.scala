@@ -37,7 +37,7 @@ class StorageHintsSentinel(val metricsProvider: ActorRef, override val conf: Con
       val notificationData = Array(totalHints - math.max(0, previousValue(0)),  hintsInProgress, totalHints)
 
       if ((notificationData(0) > 0) || (notificationData(1) > 0)) {
-        if (previousValue(0) == 0) {
+        if (previousValue(0) == 0 || previousValue(0) == -1) {
           // total hints is cumulative (it is not the current number of hints, but the number of hints since the node startup)
           previousValue = Array(totalHints, hintsInProgress)
         } else {
