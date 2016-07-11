@@ -30,7 +30,11 @@ case "$1" in
     stop)
         # Cassandra shutdown
         echo -n "Shutdown Cassandra Agent: "
-        kill `cat $cats_pid_file`
+        AGENT_PID=`cat $cats_pid_file`
+        DIRECTORY="/proc/$AGENT_PID"
+        if [ -d "$DIRECTORY" ]; then
+            kill $AGENT_PID
+        fi
         retval=$?
         [ $retval -eq 0 ] && rm -f $cats_pid_file
         sleep 5
@@ -38,7 +42,7 @@ case "$1" in
         if [[ $STATUS == "$NAME stopped !" ]]; then
             echo "OK"
         else
-            echo "ERROR: could not stop $NAME:  $STATUS"
+            echo "ERROR: could not stop $NAME: $STATUS"
             exit 1
         fi
         ;;
