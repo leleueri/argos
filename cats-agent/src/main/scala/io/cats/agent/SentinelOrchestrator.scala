@@ -45,6 +45,7 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   context.actorOf(Props(classOf[MemtableFlusherBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MEMTABLE)), name = "MemtableFlusherBlockedSentinel")
   context.actorOf(Props(classOf[MutationBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MUTATION)), name = "MutationBlockedSentinel")
   context.actorOf(Props(classOf[ReadBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ)), name = "ReadBlockedSentinel")
+  context.actorOf(Props(classOf[CompactionExecBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_COMPACTION)), name = "CompactionBLockedSentinel")
   context.actorOf(Props(classOf[ReadRepairBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ_REPAIR)), name = "ReadRepairBlockedSentinel")
   context.actorOf(Props(classOf[RequestResponseBlockedSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_REQUEST_RESPONSE)), name = "RequestResponseBlockedSentinel")
 

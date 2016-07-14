@@ -97,6 +97,7 @@ These sentinels examine the number of blocked tasks and send a notification if t
 * stage-read
 * stage-read-repair
 * stage-request-response
+* stage-compaction
 
 Parameter | Type | Description 
 --- | --- | ---
@@ -311,6 +312,11 @@ cats {
       enabled= true
       level= "WARNING"
       label= "Stage Request Response"
+    }
+    stage-compaction {
+      enabled= true
+      level= "WARNING"
+      label= "Stage Compaction Executor"
     }
     notification-jmx {
       enabled= true

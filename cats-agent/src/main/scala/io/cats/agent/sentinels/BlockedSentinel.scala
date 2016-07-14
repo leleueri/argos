@@ -30,9 +30,7 @@ abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: Config) 
       }
 
       if (treadPool.currentBlockedTasks > 0 && System.currentTimeMillis >= nextReact) {
-        Some(treadPool)
-      } else {
-        None
+        react(treadPool)
       }
     }
   }

@@ -33,6 +33,7 @@ object Constants {
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_INTERNAL = "cats.sentinel.stage-internal"
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_MEMTABLE = "cats.sentinel.stage-memtable"
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_MUTATION = "cats.sentinel.stage-mutation"
+  val CONF_OBJECT_ENTRY_SENTINEL_STAGE_COMPACTION = "cats.sentinel.stage-compaction"
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ = "cats.sentinel.stage-read"
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ_REPAIR = "cats.sentinel.stage-read-repair"
   val CONF_OBJECT_ENTRY_SENTINEL_STAGE_REQUEST_RESPONSE= "cats.sentinel.stage-request-response"

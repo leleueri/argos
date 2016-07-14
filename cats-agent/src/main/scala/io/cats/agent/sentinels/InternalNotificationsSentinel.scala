@@ -24,7 +24,7 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
   this.context.system.eventStream.subscribe(this.self, classOf[JmxNotification])
 
   override def processProtocolElement: Receive = {
-    case CheckMetrics() => {}
+    case CheckMetrics() => {} // nothing to do on checkMetrics
     case JmxNotification(notification) =>
       val data = notification.getUserData.asInstanceOf[java.util.HashMap[String, Int]].asScala
       if (commonLogger.isDebugEnabled) {
