@@ -19,7 +19,7 @@ This archive contains:
 * a configuration directory with
   * a bash script containing a set of variables
   * the application.conf file
-* a directory with the cats jar
+* a directory with the argos jar
 
 Once extracted, you have to :
 * set the __ARGOS_HOME__ variable into the *argos-agent.sh* script, the value should be the absolute path of the directory containing the *argos-agent.sh* script
