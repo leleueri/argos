@@ -1,10 +1,11 @@
-# cats
-Cassandra Administration Tools 
+# Argos
+
 This project provides some tools to manage Cassandra Cluster.
+Argus Panoptes (or Argos) is a 100-eyed giant in Greek mythology. With 50 opened eyes and 50 closed eyes, I guess he can keep an eye on a bunch of Cassandra nodes ;-)
 
 ## Install
 
-First of all, package *cats* as ZIP file.
+First of all, package *argos* as ZIP file.
 <pre>
 <code>
 sbt universal:package-bin
@@ -14,22 +15,22 @@ sbt universal:package-bin
 The ZIP file will be available in the *target/universal* directory.
 
 This archive contains:
-* the startup script : cats-agent.sh 
+* the startup script : argos-agent.sh 
 * a configuration directory with
   * a bash script containing a set of variables
   * the application.conf file
 * a directory with the cats jar
 
 Once extracted, you have to :
-* set the __CATS_HOME__ variable into the *cats-agent.sh* script, the value should be the absolute path of the directory containing the *cats-agent.sh* script
-* set the __JAVA_HOME__ variable into the *cats-env.sh* script (target must be Java 8)
-* Update the __CASSANDRA_HOME__ and the __CASSANDRA_INCLUDE__ variable into the *cats-env.sh* script if values are not correct
+* set the __ARGOS_HOME__ variable into the *argos-agent.sh* script, the value should be the absolute path of the directory containing the *argos-agent.sh* script
+* set the __JAVA_HOME__ variable into the *argos-env.sh* script (target must be Java 8)
+* Update the __CASSANDRA_HOME__ and the __CASSANDRA_INCLUDE__ variable into the *argos-env.sh* script if values are not correct
 * adapt the *application.conf*
 
 ## Configuration
 
 This tool is based on [Akka](http://akka.io/ "Akka"), if you want to configure the application logs, please look at the akka documentation.
-The cats specific configuration entry point is identified by the __cats__ section that contains three main entries :
+The argos specific configuration entry point is identified by the __argos__ section that contains three main entries :
 * metrics : this section defines the JMX connectivity 
 * sentinel : this section defines the configuration of each sentinel
 * notifiers : this section defines the configuration for each notification process (currently, there are only one type of notifier *mail*)
@@ -174,7 +175,7 @@ Currently, there are only one notifier named `mail`.
 
 Parameter | Type | Description 
 --- | --- | ---
-providerClass | `String` | the provider class `io.cats.agent.notifiers.MailNotifierProvider`
+providerClass | `String` | the provider class `io.argos.agent.notifiers.MailNotifierProvider`
 smtp-host | `String` | hostname of the SMTP service
 smtp-port | `String` | port of the SMTP service
 from | `String` | The email address specified into the from header
@@ -189,7 +190,7 @@ akka {
   loglevel = "INFO"
 }
 
-cats {
+argos {
   scheduler-interval = 5 seconds
   metrics {
     jmx-host = "127.0.0.1"
@@ -327,7 +328,7 @@ cats {
   }
   notifiers {
     mail {
-      providerClass = "io.cats.agent.notifiers.MailNotifierProvider"
+      providerClass = "io.argos.agent.notifiers.MailNotifierProvider"
       smtp-host= "127.0.0.1"
       smtp-port= "25"
       from= "cassandra-agent@no-reply"
