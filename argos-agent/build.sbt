@@ -1,3 +1,5 @@
+enablePlugins(UniversalPlugin)
+
 name := "argos-agent"
 
 version := "0.3-SNAPSHOT"
@@ -26,18 +28,18 @@ assemblyMergeStrategy in assembly := {
 // we specify the name for our fat jar
 assemblyJarName in assembly := s"argos-agent-assembly-${version}.jar"
 
-//// removes all jar mappings in universal and appends the fat jar
-//mappings in Universal := {
-//  // universalMappings: Seq[(File,String)]
-//  val universalMappings = (mappings in Universal).value
-//  val fatJar = (assembly in Compile).value
-//  // removing means filtering
-//  val filtered = universalMappings filter {
-//    case (file, name) =>  ! name.endsWith(".jar")
-//  }
-//  // add the fat jar
-//  filtered :+ (fatJar -> ("lib/" + fatJar.getName))
-//}
-//
-//// the bash scripts classpath only needs the fat jar
-//scriptClasspath := Seq( (jarName in assembly).value )
+// removes all jar mappings in universal and appends the fat jar
+mappings in Universal := {
+  // universalMappings: Seq[(File,String)]
+  val universalMappings = (mappings in Universal).value
+  val fatJar = (assembly in Compile).value
+  // removing means filtering
+  val filtered = universalMappings filter {
+    case (file, name) =>  ! name.endsWith(".jar")
+  }
+  // add the fat jar
+  filtered :+ (fatJar -> ("lib/" + fatJar.getName))
+}
+
+// the bash scripts classpath only needs the fat jar
+scriptClasspath := Seq( (jarName in assembly).value )
