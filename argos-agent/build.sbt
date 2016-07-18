@@ -26,7 +26,7 @@ assemblyMergeStrategy in assembly := {
 }
 
 // we specify the name for our fat jar
-assemblyJarName in assembly := s"argos-agent-assembly-${version}.jar"
+assemblyJarName in assembly := s"argos-agent-assembly.jar"
 
 // removes all jar mappings in universal and appends the fat jar
 mappings in Universal := {
