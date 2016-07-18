@@ -20,5 +20,5 @@ for jar in `ls $ARGOS_HOME/lib/*.jar`; do
     ACLASSPATH=$ACLASSPATH:$jar
 done
 
-export ARGOS_CLASSPATH $ACLASSPATH
+export ARGOS_CLASSPATH=$ACLASSPATH
 
