@@ -4,8 +4,7 @@ import java.nio.file.Paths
 import javax.management._
 import javax.management.remote.{JMXConnector, JMXConnectorFactory, JMXServiceURL}
 
-import io.argos.agent.bean.{StorageSpaceInfo, DroppedMessageStats, ThreadPoolStats}
-import io.argos.agent.bean.StorageSpaceInfo
+import io.argos.agent.bean._
 import org.apache.cassandra.service.StorageServiceMBean
 
 import scala.collection.JavaConverters._
@@ -191,6 +190,30 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
     val values = mbeanServerCnx.getAttributes(new ObjectName(s"org.apache.cassandra.metrics:type=DroppedMessage,scope=${scope},name=Dropped"), attrNames)
 
     DroppedMessageStats(scope,
+      values.get(0).asInstanceOf[Attribute].getValue.toString.toLong,
+      values.get(1).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(2).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(3).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(4).asInstanceOf[Attribute].getValue.toString.toDouble)
+  }
+
+  def getReadRepairs(name: String) : ReadRepairStats =  {
+    val attrNames = Array("Count", "FifteenMinuteRate", "FiveMinuteRate", "MeanRate", "OneMinuteRate")
+    val values = mbeanServerCnx.getAttributes(new ObjectName(s"org.apache.cassandra.metrics:type=ReadRepair,name=${name}"), attrNames)
+
+    ReadRepairStats(name,
+      values.get(0).asInstanceOf[Attribute].getValue.toString.toLong,
+      values.get(1).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(2).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(3).asInstanceOf[Attribute].getValue.toString.toDouble,
+      values.get(4).asInstanceOf[Attribute].getValue.toString.toDouble)
+  }
+
+  def getConnectionTimeouts() : ConnectionTimeoutStats =  {
+    val attrNames = Array("Count", "FifteenMinuteRate", "FiveMinuteRate", "MeanRate", "OneMinuteRate")
+    val values = mbeanServerCnx.getAttributes(new ObjectName("org.apache.cassandra.metrics:type=Connection,name=TotalTimeouts"), attrNames)
+
+    ConnectionTimeoutStats(
       values.get(0).asInstanceOf[Attribute].getValue.toString.toLong,
       values.get(1).asInstanceOf[Attribute].getValue.toString.toDouble,
       values.get(2).asInstanceOf[Attribute].getValue.toString.toDouble,

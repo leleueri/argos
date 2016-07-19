@@ -1,13 +1,13 @@
 package io.argos.agent.workers
 
 import java.io.IOException
-import javax.management.{ObjectName, NotificationListener}
+import javax.management.{InstanceNotFoundException, NotificationListener, ObjectName}
 
 import akka.actor.Actor.Receive
-import akka.actor.{ActorRef, ActorContext, ActorLogging, Actor}
-import io.argos.agent.{Messages, Constants}
+import akka.actor.{Actor, ActorContext, ActorLogging, ActorRef}
+import io.argos.agent.{Constants, Messages}
 import io.argos.agent.bean._
-import io.argos.agent.util.{JmxClient, CommonLoggerFactory, HostnameProvider}
+import io.argos.agent.util.{CommonLoggerFactory, HostnameProvider, JmxClient}
 import Constants._
 import Messages._
 import io.argos.agent.bean._
@@ -53,10 +53,13 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
           case MetricsRequest(ACTION_CHECK_STORAGE_SPACE, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_SPACE, Some(jmxClient.getStorageSpaceInformation()))
           case MetricsRequest(ACTION_CHECK_STORAGE_HINTS, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_HINTS, Some(jmxClient.getStorageHints()))
           case MetricsRequest(ACTION_CHECK_STORAGE_EXCEPTION, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_EXCEPTION, Some(jmxClient.getStorageMetricExceptions()))
-
+          case MetricsRequest(ACTION_CHECK_READ_REPAIR, msgType) => sender ! MetricsResponse(ACTION_CHECK_READ_REPAIR, Some(jmxClient.getReadRepairs(msgType)))
+          case MetricsRequest(ACTION_CHECK_CNX_TIMEOUT, msgType) => sender ! MetricsResponse(ACTION_CHECK_CNX_TIMEOUT, Some(jmxClient.getConnectionTimeouts()))
         }
 
       } catch {
+        case ex: InstanceNotFoundException =>
+          log.warning("JMX Instance not found : {}", ex.getMessage)
         case ex: ConnectException =>
           log.warning("Connection error : {}", ex.getMessage, ex);
           context.system.eventStream.publish(
@@ -120,9 +123,9 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
     sender ! AvailabilityIssue(listOfAvailability)
   }
 
-  private def interpretTokenRangeString(tokenrange: String): CatsTokenRange = {
+  private def interpretTokenRangeString(tokenrange: String): ArgosTokenRange = {
     val cTokenRange = ("start_token:([^,]+),\\send_token:([^,]+),\\sendpoints:\\[([^\\]]+)\\],\\srpc_endpoints:\\[([^\\]]+)").r.findAllIn(tokenrange).matchData map {
-      m => CatsTokenRange(
+      m => ArgosTokenRange(
         m.group(1).toLong,
         m.group(2).toLong,
         m.group(3).split(",").map(_.trim).toList,
@@ -131,13 +134,13 @@ class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, 
     }
 
     val details = ("host:([^,]+),\\sdatacenter:([^,]+),\\srack:([^\\)]+)").r.findAllIn(tokenrange).matchData map {
-      m => CatsEndpointDetails(m.group(1), m.group(2), m.group(3))
+      m => ArgosEndpointDetails(m.group(1), m.group(2), m.group(3))
     }
 
     cTokenRange.next().copy(endpointDetails = details.toList)
   }
 
-  private def detectAvailabilityIssue(range: CatsTokenRange, connectedEndpoint: String, cl: String, ks: String) : Option[Availability] = {
+  private def detectAvailabilityIssue(range: ArgosTokenRange, connectedEndpoint: String, cl: String, ks: String) : Option[Availability] = {
     val localDC = range.endpointDetails.filter(_.host == connectedEndpoint).head.dc
     val consitencyLevel = cl.toLowerCase
 

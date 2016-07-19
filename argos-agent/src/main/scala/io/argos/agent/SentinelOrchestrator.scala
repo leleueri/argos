@@ -33,6 +33,11 @@ class SentinelOrchestrator extends Actor with ActorLogging {
 
   context.actorOf(Props(classOf[LoadAverageSentinel], globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_LOADAVG)), name = "LoadAverageSentinel")
 
+  context.actorOf(Props(classOf[ReadRepairBackgroundSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BACKGROUND)), name = "ReadRepairBackgroundSentinel")
+  context.actorOf(Props(classOf[ReadRepairBlockingSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BLOCKING)), name = "ReadRepairBlockingSentinel")
+
+  context.actorOf(Props(classOf[ConnectionTimeoutSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONNECTION_TIMEOUTS)), name = "ConnectionTimeoutSentinel")
+
   context.actorOf(Props(classOf[DroppedCounterSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER)), name = "DroppedCounterSentinel")
   context.actorOf(Props(classOf[DroppedMutationSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION)), name = "DroppedMutationSentinel")
   context.actorOf(Props(classOf[DroppedReadSentinel], metricsProvider, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ)), name = "DroppedReadSentinel")

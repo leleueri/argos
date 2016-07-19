@@ -17,7 +17,10 @@ object Constants {
 
   val CONF_OBJECT_ENTRY_SENTINEL = "argos.sentinel"
   val CONF_OBJECT_ENTRY_SENTINEL_LOADAVG = "argos.sentinel.load-avg"
-  val CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE = "argos.sentinel.consitency-level"
+  val CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE = "argos.sentinel.consistency-level"
+  val CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BLOCKING = "argos.sentinel.consistency-repaired-blocking"
+  val CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BACKGROUND = "argos.sentinel.consistency-repaired-background"
+  val CONF_OBJECT_ENTRY_SENTINEL_CONNECTION_TIMEOUTS = "argos.sentinel.connection-timeouts"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER = "argos.sentinel.dropped-counter"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION = "argos.sentinel.dropped-mutation"
   val CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ = "argos.sentinel.dropped-read"
@@ -67,6 +70,11 @@ object Messages {
 
   val OFFLINE_NODE = "OFFLINE"
   val ONLINE_NODE = "ONLINE"
+
+  val READ_REPAIR_BACKGROUND = "RepairedBackground"
+  val READ_REPAIR_BLOCKING = "RepairedBlocking"
+
+  val CNX_TIMEOUT = "ConnectionTimeouts"
 
   val DROPPED_MESSAGE_COUNTER_MUTATION = "COUNTER_MUTATION"
   val DROPPED_MESSAGE_MUTATION = "MUTATION"

@@ -84,11 +84,40 @@ enabled | `Boolean` | Specify if the sentinel is activated
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
+#### Consistency issue sentinel
+
+These sentinels examine the number of ReadRepair tasks (Background & Blocking) and send a notification if the 1MinuteRate is different of 0.
+
+There are two sentinels, one per ReadRepair type:
+
+* consistency-repaired-blocking
+* consistency-repaired-background
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+
+#### Connection Timeout sentinel
+
+These sentinels examine the number of Connection Timeout and send a notification if the 1MinuteRate is different of 0.
+
+* connection-timeouts
+
+**NOTE:** This sentinel works only for the version 2.2 (or more) of cassandra
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+
 #### Blocked tasks sentinel
 
 These sentinels examine the number of blocked tasks and send a notification if the result is different of 0. There are one sentinel per type of ThreadPool.
 
-**NOTE:** Blocked tasks sentinel are available since version 2.2 of cassandra
+**NOTE:** Blocked tasks sentinel are available for the version 2.2 (or more) of cassandra
 
 * stage-counter
 * stage-gossip
@@ -221,6 +250,21 @@ argos {
           cl= "all"
         }
       ]
+    }
+    consistency-repaired-blocking {
+      enabled= true
+      level= "WARNING"
+      label= "Blocking Read repairs"
+    }
+    consistency-repaired-background {
+      enabled= true
+      level= "WARNING"
+      label= "Background Read repairs"
+    }
+    connection-timeouts {
+      enabled= true
+      level= "WARNING"
+      label= "Connection Timeouts"
     }
     dropped-counter {
       enabled= true
