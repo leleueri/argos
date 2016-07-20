@@ -105,8 +105,6 @@ These sentinels examine the number of Connection Timeout and send a notification
 
 * connection-timeouts
 
-**NOTE:** This sentinel works only for the version 2.2 (or more) of cassandra
-
 Parameter | Type | Description 
 --- | --- | ---
 enabled | `Boolean` | Specify if the sentinel is activated
