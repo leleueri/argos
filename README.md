@@ -40,7 +40,7 @@ An additional parameter `scheduler-interval` is available to define the delay be
 Parameter | Type | Description 
 --- | --- | ---
 scheduler-interval | `Duration` | Duration between two Metrics validation 
-
+cassandra-version | `String` | the cassandra version x.y (ex: 2.1)
 
 ### Metrics
 
@@ -117,8 +117,6 @@ label | `String` | Label used into the notification *title*
 
 These sentinels examine the number of blocked tasks and send a notification if the result is different of 0. There are one sentinel per type of ThreadPool.
 
-**NOTE:** Blocked tasks sentinel are available for the version 2.2 (or more) of cassandra
-
 * stage-counter
 * stage-gossip
 * stage-internal
@@ -176,8 +174,6 @@ Parameter | Type | Description
 enabled | `Boolean` | Specify if the sentinel is activated
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
-cversion | `Float` | The version of the cassandra node (needed to interpret the JMX notification message)
-
 
 #### Consitency Level
 
@@ -221,6 +217,7 @@ akka {
 
 argos {
   scheduler-interval = 5 seconds
+  cassandra-version = "2.1"
   metrics {
     jmx-host = "127.0.0.1"
     jmx-port = 7100
@@ -367,7 +364,6 @@ argos {
       enabled= true
       level= "INFO"
       label= "Progress Event"
-      cversion=2.2
     }
   }
   notifiers {

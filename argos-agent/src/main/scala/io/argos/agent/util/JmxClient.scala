@@ -5,6 +5,7 @@ import javax.management._
 import javax.management.remote.{JMXConnector, JMXConnectorFactory, JMXServiceURL}
 
 import io.argos.agent.bean._
+import org.apache.cassandra.metrics.CassandraMetricsRegistry.JmxGaugeMBean
 import org.apache.cassandra.service.StorageServiceMBean
 
 import scala.collection.JavaConverters._
@@ -19,7 +20,7 @@ import scala.collection.mutable.Map
   * @param user
   * @param pwd
   */
-class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
+abstract class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
 
   // TODO Heap usage & GC stats
   // TODO READ/WRITE Latency ==> see Aaron Morton video CassSubmit 2015
@@ -142,10 +143,11 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
   private def initThreadPoolStageValues(stage: String, path: String) : ThreadPoolStats =  {
     val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toInt
     val completed = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CompletedTasks"), "Value").toString.toInt
-    val currentlyBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CurrentlyBlockedTasks"), "Count").toString.toLong
     val poolSize = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=MaxPoolSize"), "Value").toString.toInt
     val pending = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=PendingTasks"), "Value").toString.toInt
-    val totalBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=TotalBlockedTasks"), "Count").toString.toLong
+
+    val currentlyBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CurrentlyBlockedTasks"), "Count").toString.toLong
+    val totalBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=TotalBlockedTasks"),  "Count").toString.toLong
 
     ThreadPoolStats(`type` = stage,
       activeTasks = active,
@@ -153,7 +155,7 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
       currentBlockedTasks = currentlyBlocked,
       maxPoolSize = poolSize,
       pendingTasks = pending,
-      totalBlockedTasks = totalBlocked)
+      totalBlockedTasks = -totalBlocked)
   }
 
   /**
@@ -209,7 +211,7 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
       values.get(4).asInstanceOf[Attribute].getValue.toString.toDouble)
   }
 
-  def getConnectionTimeouts() : ConnectionTimeoutStats =  {
+  def getConnectionTimeouts(  ) : ConnectionTimeoutStats =  {
     val attrNames = Array("Count", "FifteenMinuteRate", "FiveMinuteRate", "MeanRate", "OneMinuteRate")
     val values = mbeanServerCnx.getAttributes(new ObjectName("org.apache.cassandra.metrics:type=Connection,name=TotalTimeouts"), attrNames)
 
@@ -222,17 +224,53 @@ class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: O
   }
 }
 
+class JmxClientCassandra21(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) extends JmxClient(hostname, port, user, pwd)  {
+
+  override def getStageValue(stage: String) = {
+    stage match {
+      case "RequestResponseStage" => initThreadPoolStageValues21 (stage, "request")
+      case "ReadStage" => initThreadPoolStageValues21 (stage, "request")
+      case "MutationStage" => initThreadPoolStageValues21 (stage, "request")
+      case "CounterMutationStage" => initThreadPoolStageValues21 (stage, "request")
+      case _ => super.getStageValue(stage)
+    }
+  }
+
+  private def initThreadPoolStageValues21(stage: String, path: String) : ThreadPoolStats =  {
+    val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toInt
+    val completed = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CompletedTasks"), "Value").toString.toInt
+    val poolSize = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=MaxPoolSize"), "Value").toString.toInt
+    val pending = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=PendingTasks"), "Value").toString.toInt
+
+    val currentlyBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CurrentlyBlockedTasks"), "Value" ).toString.toLong
+    val totalBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=TotalBlockedTasks"), "Value" ).toString.toLong
+
+    ThreadPoolStats(`type` = stage,
+      activeTasks = active,
+      completedTasks = completed,
+      currentBlockedTasks = currentlyBlocked,
+      maxPoolSize = poolSize,
+      pendingTasks = pending,
+      totalBlockedTasks = -totalBlocked)
+  }
+}
+
+class JmxClientCassandraUpstream(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) extends JmxClient(hostname, port, user, pwd)
+
 object JmxClient {
 
   val DEFAULT_HOSTNAME = "127.0.0.1"
   val DEFAULT_JMX_PORT = 7199
 
-  def apply() : JmxClient = {
-    new JmxClient(DEFAULT_HOSTNAME, DEFAULT_JMX_PORT)
+
+  def apply(hostname: String, port: Int) : JmxClient = apply(hostname, port, None, None)
+
+  def apply(hostname: String, port: Int, user: Option[String], pwd: Option[String]) : JmxClient = {
+      if (CassandraVersion.version.equals("2.1")) {
+      new JmxClientCassandra21(hostname, port, user, pwd)
+    } else {
+      new JmxClientCassandraUpstream(hostname, port, user, pwd)
+    }
   }
-
-  def apply(hostname: String, port: Int) : JmxClient = new JmxClient(hostname, port)
-
-  def apply(hostname: String, port: Int, user: Option[String], pwd: Option[String]) : JmxClient = new JmxClient(hostname, port, user, pwd)
 
 }

@@ -2,17 +2,19 @@ package io.argos.agent
 
 import java.util.concurrent.{Executors, TimeUnit}
 
-import akka.actor.{ActorLogging, Props, Actor}
+import akka.actor.{Actor, ActorLogging, Props}
 import com.typesafe.config.ConfigFactory
-import io.argos.agent.bean.{CheckNodeStatus, CheckMetrics}
+import io.argos.agent.bean.{CheckMetrics, CheckNodeStatus}
 import io.argos.agent.sentinels._
 import io.argos.agent.workers.MetricsProvider
 import Constants._
 import io.argos.agent.sentinels._
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import io.argos.agent.bean._
 import Messages._
+import io.argos.agent.util.CassandraVersion
 
 
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
@@ -28,8 +30,8 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   val globalConfig = ConfigFactory.load()
 
   val configJmx = globalConfig.getConfig(CONF_OBJECT_ENTRY_METRICS)
-  // TODO manage User/PWD
-  val metricsProvider = context.actorOf(Props(classOf[MetricsProvider], configJmx.getString(CONF_ORCHESTRATOR_JMX_HOST), configJmx.getInt(CONF_ORCHESTRATOR_JMX_PORT), None, None))
+
+  val metricsProvider = context.actorOf(Props(classOf[MetricsProvider], configJmx), name = "MetricsProvider")
 
   context.actorOf(Props(classOf[LoadAverageSentinel], globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_LOADAVG)), name = "LoadAverageSentinel")
 

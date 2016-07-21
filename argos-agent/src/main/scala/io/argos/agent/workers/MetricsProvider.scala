@@ -16,16 +16,21 @@ import CommonLoggerFactory._
 import io.argos.agent.util.JmxClient
 import java.rmi.ConnectException
 
+import com.typesafe.config.Config
 import org.apache.cassandra.tools.NodeProbe
 
 import scala.collection.JavaConverters._
 /**
  * Created by eric on 27/06/16.
  */
-class MetricsProvider(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) extends NotificationListener with Actor with ActorLogging {
+class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor with ActorLogging {
+
+  val hostname = jmxConfig.getString(CONF_ORCHESTRATOR_JMX_HOST)
+  val port = jmxConfig.getInt(CONF_ORCHESTRATOR_JMX_PORT)
+  val user = None // TODO manage user/pwd
+  val pwd = None
 
   log.debug("Start MetricsProvider with params : hostname=<{}>, port=<{}>, user=<{}>, password=<{}>", hostname, port, user, pwd)
-
 
   val jmxClient =  try {
     JmxClient(hostname, port, user, pwd)

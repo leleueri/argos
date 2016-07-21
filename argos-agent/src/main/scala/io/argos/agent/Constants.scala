@@ -10,6 +10,7 @@ object Constants {
 
   val CONF_ORCHESTRATOR_INTERVAL = "argos.scheduler-interval"
 
+  val CONF_CASSANDRA_VERSION = "argos.cassandra-version"
 
   val CONF_OBJECT_ENTRY_METRICS = "argos.metrics"
   val CONF_ORCHESTRATOR_JMX_HOST = "jmx-host"
@@ -49,7 +50,6 @@ object Constants {
   val CONF_LABEL = "label"
   val CONF_FREQUENCY = "period"
   val CONF_COMMIT_LOG_THRESHOLD = "commitlog-threshold"
-  val CONF_CASSANDRA_VERSION = "cversion"
 
   val CONF_KEYSPACES = "keyspaces"
   val CONF_KEYSPACE_NAME = "name"

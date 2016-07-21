@@ -3,7 +3,7 @@ package io.argos.agent.sentinels
 import com.typesafe.config.Config
 import io.argos.agent.Constants
 import io.argos.agent.bean.{CheckMetrics, JmxNotification}
-import io.argos.agent.util.{HostnameProvider, CommonLoggerFactory}
+import io.argos.agent.util.{CassandraVersion, CommonLoggerFactory, HostnameProvider}
 import Constants._
 import CommonLoggerFactory._
 
@@ -32,7 +32,7 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
         commonLogger.debug(this, "Receive JMX notification=<{}>", data.toString())
       }
       if (data("type") == ERROR_STATUS ) sendErrorStatus(notification, data)
-      else if (data("type") == ABORT_STATUS && conf.getDouble(CONF_CASSANDRA_VERSION) > 2.1) sendAbortStatus(notification, data)
+      else if (data("type") == ABORT_STATUS && !CassandraVersion.version.equals("2.1")) sendAbortStatus(notification, data)
   }
 
   def sendErrorStatus(notification: javax.management.Notification, data: collection.mutable.Map[String, Int]) = sendStatus(notification, data, "A progess has failed ")
