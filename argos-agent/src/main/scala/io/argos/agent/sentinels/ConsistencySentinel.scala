@@ -31,7 +31,7 @@ abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: Conf
         log.debug("ConsistencySentinel : ReadRepair Type=<{}>, onMinRate=<{}>, total=<{}>", readRepairMsg.`type`, readRepairMsg.oneMinRate.toString, readRepairMsg.count.toString)
       }
 
-      if (readRepairMsg.oneMinRate > 0.0) {
+      if (readRepairMsg.oneMinRate > conf.getInt(CONF_THRESHOLD)) {
         react(readRepairMsg)
       }
     }

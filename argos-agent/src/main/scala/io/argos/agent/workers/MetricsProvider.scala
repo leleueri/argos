@@ -68,7 +68,7 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
 
       } catch {
         case ex: InstanceNotFoundException =>
-          log.warning("JMX Instance not found : {}", ex.getMessage)
+          log.info("JMX Instance not found : {}", ex.getMessage)
         case ex: ConnectException =>
           log.warning("Connection error : {}", ex.getMessage, ex);
           context.system.eventStream.publish(

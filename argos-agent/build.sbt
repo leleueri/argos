@@ -8,7 +8,7 @@ version := "0.3-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
-libraryDependencies += "org.apache.cassandra" % "cassandra-all" % "3.0.6" //% "provided"
+libraryDependencies += "org.apache.cassandra" % "cassandra-all" % "3.0.6" % "provided"
 
 libraryDependencies += "javax.mail" % "mail" % "1.4.7"
 

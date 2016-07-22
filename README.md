@@ -39,8 +39,8 @@ An additional parameter `scheduler-interval` is available to define the delay be
 
 Parameter | Type | Description 
 --- | --- | ---
-scheduler-interval | `Duration` | Duration between two Metrics validation 
-cassandra-version | `String` | the cassandra version x.y (ex: 2.1)
+scheduler-interval | `Duration` | Duration between two Metrics validation (Default: 5 seconds)
+cassandra-version | `Double` | the cassandra version x.y (ex: 2.1) (Default: 3.0)
 
 ### Metrics
 
@@ -48,8 +48,8 @@ The sentinels need some metrics provided by the JMX interface of the cassandra n
 
 Parameter | Type | Description 
 --- | --- | ---
-jmx-host | `String` | IP on which the instance of Cassandra binds the JMX server
-jmx-port | `Integer` | Listening port of the JMX Server
+jmx-host | `String` | IP on which the instance of Cassandra binds the JMX server (Default: 127.0.0.1)
+jmx-port | `Integer` | Listening port of the JMX Server (Default: 7199)
 
 ### Sentinel
 
@@ -61,7 +61,7 @@ This sentinel examines the Load Average.
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 threshold | `Float` | The maximum value authorized for the LoadAvg metrics
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
@@ -80,7 +80,7 @@ These sentinels examine the number of dropped messages, if the number of dropped
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
@@ -95,7 +95,8 @@ There are two sentinels, one per ReadRepair type:
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
+threshold | `Integer` | The maximum value authorized (default : 0)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
@@ -107,7 +108,7 @@ These sentinels examine the number of Connection Timeout and send a notification
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
@@ -127,7 +128,7 @@ These sentinels examine the number of blocked tasks and send a notification if t
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
@@ -137,7 +138,7 @@ This sentinel examines the number of storage exceptions and send a notification 
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
@@ -147,7 +148,7 @@ This sentinel examines the number of Hinted-Handoff and send a notification if t
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
@@ -157,7 +158,7 @@ This sentinel examines the used space on each directory declared in the Cassandr
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 threshold | `Integer` | Percentage of available space required for the data directories
@@ -169,7 +170,7 @@ This sentinel send a notification if the JMX listener is informed about a ERROR 
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 
@@ -179,7 +180,7 @@ This sentinel send a notification if the declared ConsistencyLevel can't be reac
 
 Parameter | Type | Description 
 --- | --- | ---
-enabled | `Boolean` | Specify if the sentinel is activated
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 keyspaces | `List` | List of Object to defined the expected ConsistencyLevel for a given keyspace
@@ -188,6 +189,10 @@ The "keyspace" object has two attributes :
 * name : to identify the keyspace
 * cl   : to define to expected ConsistencyLevel
 
+#### Period
+
+Each sentinel may configure the 'period' between two notifications to avoid flooding the alert receiver.
+By default, the period between two alerts is set to 5 minutes (excepted for disk capacity, the period is 4 H)
 
 ### Notifiers
 
@@ -229,6 +234,7 @@ argos {
     }
     consitency-level {
       enabled= true
+	  period = 5 minutes 
       level= "CRITIC"
       label= "Consitency Level"
       keyspaces= [
