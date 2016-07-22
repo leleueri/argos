@@ -44,7 +44,7 @@ cassandra-version | `String` | the cassandra version x.y (ex: 2.1)
 
 ### Metrics
 
-The sentinels need some metrics provided by the JMX interface of the cassandra node, this section configues this 
+The sentinels need some metrics provided by the JMX interface of the cassandra node, this section configures the JMX connection parameters.
 
 Parameter | Type | Description 
 --- | --- | ---
@@ -53,7 +53,7 @@ jmx-port | `Integer` | Listening port of the JMX Server
 
 ### Sentinel
 
-A sentinel is an object that control a specific information provided by the JMX interface of the Cassandra server. If the information is considered as " *wrong* ", the sentinel will will send a notification message to the `notifiers`
+A sentinel is an actor that control a specific information provided by the JMX interface of the Cassandra server. If the information is considered as " *wrong* ", the sentinel will will send a notification message to the `notifiers`.
 
 #### LoadAvg sentinel
 
@@ -133,7 +133,7 @@ label | `String` | Label used into the notification *title*
 
 #### Storage Exception
 
-This sentinel examines the number of storage exception and send a notification if the result is different of 0
+This sentinel examines the number of storage exceptions and send a notification if the result is different of 0
 
 Parameter | Type | Description 
 --- | --- | ---

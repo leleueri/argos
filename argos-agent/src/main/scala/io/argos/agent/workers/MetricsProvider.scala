@@ -47,6 +47,10 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
 
   override def receive: Receive = {
     case CheckNodeStatus => log.debug("Node is online, ignore the ping message")
+    case AvailabilityRequirements(ks, cl) => {
+      log.debug(s"MetricsProvider receives Availability(${ks}, ${cl})")
+      checkAvailability(sender(), ks, cl)
+    }
     case req : MetricsRequest => {
       log.debug(s"MetricsProvider receives ${req}")
       try {
@@ -79,10 +83,6 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
         case ex: IOException =>
           log.warning("Unexpected IO Exception : {}", ex.getMessage, ex) // do we have to become offline in this case??
       }
-    }
-    case AvailabilityRequirements(ks, cl) => {
-      log.debug(s"MetricsProvider receives Availability(${ks}, ${cl})")
-      checkAvailability(sender(), ks, cl)
     }
   }
 

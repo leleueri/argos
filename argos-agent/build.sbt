@@ -2,6 +2,8 @@ enablePlugins(UniversalPlugin)
 
 name := "argos-agent"
 
+organization := "io.argos"
+
 version := "0.3-SNAPSHOT"
 
 scalaVersion := "2.11.7"

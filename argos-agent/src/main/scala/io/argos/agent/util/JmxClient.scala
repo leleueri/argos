@@ -12,8 +12,8 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 import scala.collection.mutable.Map
 /**
-  * Eyes of the CatsAgent... :)
-  * This class gets JMX information from the Cassandra node monitored by the Cats Agent.
+  * Eyes of the ArgosAgent... :)
+  * This class gets JMX information from the Cassandra node monitored by the Argos Agent.
   *
   * @param hostname
   * @param port
@@ -22,9 +22,7 @@ import scala.collection.mutable.Map
   */
 abstract class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
 
-  // TODO Heap usage & GC stats
-  // TODO READ/WRITE Latency ==> see Aaron Morton video CassSubmit 2015
-  // TODO READ/WRITE Throughput ==> see Aaron Morton video CassSubmit 2015
+  // TODO Heap usage & GC stats ?? --> StopTheWorld duration???
 
   var connector = createConnection()
   var mbeanServerCnx = createMBeanServer
@@ -42,7 +40,6 @@ abstract class JmxClient(hostname: String, port: Int, user: Option[String] = Non
   }
 
   private def createMBeanServer() : MBeanServerConnection = {
-    // TODO addition of a listener to monitor Node DOWN : connector.addlistener...
     connector.getMBeanServerConnection
   }
 
@@ -259,14 +256,10 @@ class JmxClientCassandraUpstream(hostname: String, port: Int, user: Option[Strin
 
 object JmxClient {
 
-  val DEFAULT_HOSTNAME = "127.0.0.1"
-  val DEFAULT_JMX_PORT = 7199
-
-
   def apply(hostname: String, port: Int) : JmxClient = apply(hostname, port, None, None)
 
   def apply(hostname: String, port: Int, user: Option[String], pwd: Option[String]) : JmxClient = {
-      if (CassandraVersion.version.equals("2.1")) {
+    if (CassandraVersion.version == 2.1) {
       new JmxClientCassandra21(hostname, port, user, pwd)
     } else {
       new JmxClientCassandraUpstream(hostname, port, user, pwd)

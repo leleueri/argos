@@ -9,11 +9,11 @@ import CommonLoggerFactory._
 
 import scala.collection.JavaConverters._
 /**
- * Created by eric on 24/02/16.
- *
- * This class add a notification listener to the JMX MBeanServer in order to follow the progress of some action (like the repair)
- *
- */
+  * Created by eric on 24/02/16.
+  *
+  * This class add a notification listener to the JMX MBeanServer in order to follow the progress of some action (like the repair)
+  *
+  */
 class InternalNotificationsSentinel(override val conf: Config) extends Sentinel {
 
 
@@ -32,7 +32,7 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
         commonLogger.debug(this, "Receive JMX notification=<{}>", data.toString())
       }
       if (data("type") == ERROR_STATUS ) sendErrorStatus(notification, data)
-      else if (data("type") == ABORT_STATUS && !CassandraVersion.version.equals("2.1")) sendAbortStatus(notification, data)
+      else if (data("type") == ABORT_STATUS && CassandraVersion.version > 2.1) sendAbortStatus(notification, data)
   }
 
   def sendErrorStatus(notification: javax.management.Notification, data: collection.mutable.Map[String, Int]) = sendStatus(notification, data, "A progess has failed ")
@@ -44,12 +44,12 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
 
     val message =
       s"""${msg} for Cassandra Node ${HostnameProvider.hostname}.
-                                                                  |
-                                                                  |action   : ${action}
-          |progress : ${percent}%
-                                  |notification : ${notification}
-          |
-          |""".stripMargin
+         |
+         |action   : ${action}
+         |progress : ${percent}%
+         |notification : ${notification}
+         |
+         |""".stripMargin
 
     context.system.eventStream.publish(buildNotification(message))
   }
