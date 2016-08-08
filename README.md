@@ -55,6 +55,8 @@ jmx-port | `Integer` | Listening port of the JMX Server (Default: 7199)
 
 A sentinel is an actor that control a specific information provided by the JMX interface of the Cassandra server. If the information is considered as " *wrong* ", the sentinel will will send a notification message to the `notifiers`.
 
+The sentinel name is defined by the children key of the `argos.sentinel` entry.
+
 #### LoadAvg sentinel
 
 This sentinel examines the Load Average.
@@ -197,8 +199,19 @@ By default, the period between two alerts is set to 5 minutes (excepted for disk
 ### Notifiers
 
 A notifier is an object managing the notification message send by the Sentinels.
-Each notifier configuration must have the key 'providerClass' specifying the implementation of the 'NotifierProvider' trait.
+Each notifier configuration must have the key `providerClass` specifying the implementation of the `NotifierProvider` trait.
 With this trait, the provider has to implement a props method that return the "Props" object used to create the Notifier actor.
+
+Whatever the notifier implementation, there are two common configuration entries available to filter the notifications:
+
+Parameter | Type | Description 
+--- | --- | ---
+white-list | `List[String]` | the notifier will manage notifications send by the sentinel present in this list
+black-list | `List[String]` | the notifier will ignore notifications send by the sentinel present in this list
+
+If these lists are empty, the filtering is disabled and all notification will be managed by the Notifier implementation.
+If both lists are filled, only the while list will be used.
+
 Currently, there are only one notifier named `mail`.
 
 Parameter | Type | Description 
@@ -377,6 +390,8 @@ argos {
       smtp-port= "25"
       from= "cassandra-agent@no-reply"
       recipients = ["eric.leleu@somewhere.net", "eric.leleu@somewhereelse.net"]
+      //white-list= ["consitency-level", "notification-jmx"]
+      //black-list= ["consitency-level", "notification-jmx"]
     }
   }
 }
