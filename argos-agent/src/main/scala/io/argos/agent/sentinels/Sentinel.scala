@@ -34,7 +34,7 @@ abstract class Sentinel extends Actor with ActorLogging {
 
   protected def title() = s"[${level}] [${label}] Cassandra Sentinel found something"
 
-  protected def buildNotification(msg: String) : Notification = Notification(title, msg, level, label, HostnameProvider.hostname)
+  protected def buildNotification(msg: String) : Notification = Notification(self.path.name, title, msg, level, label, HostnameProvider.hostname)
 
   @throws[Exception](classOf[Exception])
   override def preStart(): Unit = {

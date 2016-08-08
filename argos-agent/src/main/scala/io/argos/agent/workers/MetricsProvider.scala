@@ -72,7 +72,7 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
         case ex: ConnectException =>
           log.warning("Connection error : {}", ex.getMessage, ex);
           context.system.eventStream.publish(
-            Notification(s"[CRITIC] Cassandra node ${HostnameProvider.hostname} is DOWN",
+            Notification(self.path.name, s"[CRITIC] Cassandra node ${HostnameProvider.hostname} is DOWN",
               s"The node ${HostnameProvider.hostname} may be down!!!",
               "CRITIC",
               "Cassandra node is DOWN",
@@ -98,7 +98,7 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
 
       log.info("Reconnected to the cassandra node");
       context.system.eventStream.publish(
-        Notification(s"[INFO] Cassandra node ${HostnameProvider.hostname} is UP",
+        Notification(self.path.name, s"[INFO] Cassandra node ${HostnameProvider.hostname} is UP",
           s"The node ${HostnameProvider.hostname} joins the cluster",
           "INFO",
           "Cassandra node is UP",

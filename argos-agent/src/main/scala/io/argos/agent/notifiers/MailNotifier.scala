@@ -14,12 +14,12 @@ import scala.collection.JavaConverters._
 
 class MailNotifier extends Notifier {
 
-  val configMail = getNotifierConfig()
+  val configMail = notifierConfig
 
   val to = configMail.getStringList(CONF_MAIL_NOTIFIER_RECIPIENTS).asScala
   val from = configMail.getString(CONF_MAIL_NOTIFIER_FROM)
   val host = configMail.getString(CONF_MAIL_NOTIFIER_SMTP)
-  val port = Option(configMail.getString(CONF_MAIL_NOTIFIER_SMTP_PORT)).getOrElse("25")
+  val port = if (configMail.hasPath(CONF_MAIL_NOTIFIER_SMTP_PORT)) configMail.getString(CONF_MAIL_NOTIFIER_SMTP_PORT) else "25"
 
   val props = new Properties();
   props.put("mail.smtp.host", host);
@@ -37,8 +37,8 @@ class MailNotifier extends Notifier {
    */
   override def notifierId: String = "mail"
 
-  override def receive = {
-    case Notification(title, msg, _, _, _) => sendMessage(title, msg)
+  override def onNotification(notif: Notification) = {
+    sendMessage(notif.title, notif.message)
   }
 
   def sendMessage(title: String, msg: String) : Unit = {

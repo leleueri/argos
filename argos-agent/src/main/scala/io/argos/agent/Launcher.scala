@@ -23,9 +23,10 @@ object Launcher extends App {
   ConfigFactory.load().getConfig(CONF_OBJECT_ENTRY_NOTIFIERS).entrySet().toList.filter(_.getKey.matches("[^\\.]+\\." + CONF_PROVIDER_CLASS_KEY)).foreach(
     confValue => {
       try {
-        CommonLoggerFactory.commonLogger.info(this, "Initialize '{}' notifier", confValue.getKey)
-        val providerClass: Any = Class.forName(confValue.getValue.unwrapped().asInstanceOf[String]).newInstance()
-        system.actorOf(providerClass.asInstanceOf[NotifierProvider].props, confValue.getKey)
+        val clazz: String = confValue.getValue.unwrapped().asInstanceOf[String]
+        CommonLoggerFactory.commonLogger.info(this, "Initialize '{}' notifier", clazz)
+        val providerClass: Any = Class.forName(clazz).newInstance()
+        system.actorOf(providerClass.asInstanceOf[NotifierProvider].props, confValue.getKey.substring(0, confValue.getKey.indexOf('.')).capitalize+"Notifier")
       } catch {
         case e: Exception =>
           CommonLoggerFactory.commonLogger.error(this, e, "Actor system will terminate, unable to initialize the '{}' notifier : '{}'.", confValue.getKey, e.getMessage)
