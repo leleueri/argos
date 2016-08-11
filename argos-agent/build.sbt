@@ -4,7 +4,7 @@ name := "argos-agent"
 
 organization := "io.argos"
 
-version := "0.3"
+version := "0.4-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 

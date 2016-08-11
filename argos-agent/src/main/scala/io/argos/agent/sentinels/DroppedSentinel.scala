@@ -4,8 +4,8 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.Constants
-import io.argos.agent.bean.{DroppedMessageStats, MetricsResponse, MetricsRequest}
+import io.argos.agent.{Constants, Messages}
+import io.argos.agent.bean.{DroppedMessageStats, MetricsRequest, MetricsResponse}
 import io.argos.agent.util.HostnameProvider
 import Constants._
 import io.argos.agent.bean._
@@ -60,4 +60,34 @@ abstract class DroppedSentinel(val metricsProvider: ActorRef, val conf: Config) 
 
     { }
   }
+}
+
+// ------ DroppedSentinel Implementations
+
+class DroppedRequestResponseSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends DroppedSentinel(metricsProvider, conf) {
+  override def getDroppedMessageStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_DROPPED_MESSAGES, Messages.DROPPED_MESSAGE_REQUEST_RESPONSE)
+}
+
+class DroppedReadSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends DroppedSentinel(metricsProvider, conf) {
+  override def getDroppedMessageStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_DROPPED_MESSAGES, Messages.DROPPED_MESSAGE_READ)
+}
+
+class DroppedReadRepairSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends DroppedSentinel(metricsProvider, conf) {
+  override def getDroppedMessageStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_DROPPED_MESSAGES, Messages.DROPPED_MESSAGE_READ_REPAIR)
+}
+
+class DroppedRangeSliceSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends DroppedSentinel(metricsProvider, conf) {
+  override def getDroppedMessageStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_DROPPED_MESSAGES, Messages.DROPPED_MESSAGE_RANGE_SLICE)
+}
+
+class DroppedPageRangeSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends DroppedSentinel(metricsProvider, conf) {
+  override def getDroppedMessageStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_DROPPED_MESSAGES, Messages.DROPPED_MESSAGE_PAGED_RANGE)
+}
+
+class DroppedMutationSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends DroppedSentinel(metricsProvider, conf) {
+  override def getDroppedMessageStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_DROPPED_MESSAGES, Messages.DROPPED_MESSAGE_MUTATION)
+}
+
+class DroppedCounterSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends DroppedSentinel(metricsProvider, conf) {
+  override def getDroppedMessageStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_DROPPED_MESSAGES, Messages.DROPPED_MESSAGE_COUNTER_MUTATION)
 }
