@@ -18,8 +18,8 @@ import scala.util.Try
 
 class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
 
-  private val dataThreshold = conf.getDouble(CONF_THRESHOLD)
-  private val commitlogThreshold = conf.getDouble(CONF_COMMIT_LOG_THRESHOLD)
+  private lazy val dataThreshold = conf.getDouble(CONF_THRESHOLD)
+  private lazy val commitlogThreshold = conf.getDouble(CONF_COMMIT_LOG_THRESHOLD)
 
   private var nextDataReact = System.currentTimeMillis
   private var nextCommitlogReact = System.currentTimeMillis

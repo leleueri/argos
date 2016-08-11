@@ -16,7 +16,7 @@ import scala.util.Try
 class LoadAverageSentinel(override val conf: Config) extends Sentinel {
   private val osMBean = ManagementFactory.getOperatingSystemMXBean()
 
-  private val loadAvgThreshold = conf.getDouble(CONF_THRESHOLD)
+  private lazy val loadAvgThreshold = conf.getDouble(CONF_THRESHOLD)
   private var nextReact = System.currentTimeMillis
   private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
