@@ -1,21 +1,13 @@
 package io.argos.agent.sentinels
 
-import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.Constants._
 import io.argos.agent.Messages
 import io.argos.agent.bean.{MetricsRequest, MetricsResponse, _}
 import io.argos.agent.util.HostnameProvider
 
-import scala.concurrent.duration.FiniteDuration
-import scala.util.Try
-
 class ConnectionTimeoutSentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
-
-  private var nextReact = System.currentTimeMillis
-  private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   override def processProtocolElement: Receive = {
 

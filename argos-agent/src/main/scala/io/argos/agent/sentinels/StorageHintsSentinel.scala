@@ -1,25 +1,15 @@
 package io.argos.agent.sentinels
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorRef
-import akka.event.EventStream
 import com.typesafe.config.Config
-import io.argos.agent.Constants
 import io.argos.agent.bean.{MetricsRequest, MetricsResponse, ActorProtocol}
-import Constants._
 import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean._
-import io.argos.agent.util.JmxClient
 
-import scala.concurrent.duration.FiniteDuration
-import scala.util.Try
 
 class StorageHintsSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
 
-  private var nextReact = System.currentTimeMillis
   private var previousValue : Array[Long] = Array(-1,-1)
-  private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   override def receive: Receive = {
     case msg => if (isEnabled) {

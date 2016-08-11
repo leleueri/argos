@@ -16,11 +16,9 @@ import scala.collection.JavaConverters._
   */
 class InternalNotificationsSentinel(override val conf: Config) extends Sentinel {
 
-
   // TODO use the ProgressEventType enum when the v2.1 will be depreciated
   val ERROR_STATUS = 2
   val ABORT_STATUS = 3
-
 
   this.context.system.eventStream.subscribe(this.self, classOf[JmxNotification])
 

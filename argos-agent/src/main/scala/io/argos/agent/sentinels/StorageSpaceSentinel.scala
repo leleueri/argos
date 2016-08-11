@@ -1,19 +1,16 @@
 package io.argos.agent.sentinels
 
-import java.lang.management.OperatingSystemMXBean
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
-import akka.event.EventStream
 import com.typesafe.config.Config
 import io.argos.agent.Constants
 import io.argos.agent.bean.{MetricsRequest, StorageSpaceInfo, MetricsResponse, ActorProtocol}
 import io.argos.agent.util.HostnameProvider
 import Constants._
 import io.argos.agent.bean._
-import io.argos.agent.util.JmxClient
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
@@ -24,8 +21,7 @@ class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Con
   private var nextDataReact = System.currentTimeMillis
   private var nextCommitlogReact = System.currentTimeMillis
 
-  private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(4, TimeUnit.HOURS).toMillis)
-
+  override val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(4, TimeUnit.HOURS).toMillis)
 
   override def processProtocolElement: Receive = {
 

@@ -1,22 +1,14 @@
 package io.argos.agent.sentinels
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.{Constants, Messages}
+import io.argos.agent.Messages
 import io.argos.agent.bean.{MetricsRequest, MetricsResponse, ThreadPoolStats}
 import io.argos.agent.util.HostnameProvider
-import Constants._
 import io.argos.agent.bean._
 
-import scala.concurrent.duration.FiniteDuration
-import scala.util.Try
 
 abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
-
-  private var nextReact = System.currentTimeMillis
-  private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   def getThreadPoolStats : MetricsRequest
 

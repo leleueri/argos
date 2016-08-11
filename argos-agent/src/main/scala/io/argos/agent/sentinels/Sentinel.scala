@@ -1,18 +1,27 @@
 package io.argos.agent.sentinels
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.Actor.Receive
-import akka.actor.{ActorLogging, Actor}
+import akka.actor.{Actor, ActorLogging}
 import com.typesafe.config.Config
 import io.argos.agent.Constants
+import io.argos.agent.Constants._
 import io.argos.agent.bean.{CheckMetrics, Notification}
 import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean.CheckMetrics
+
+import scala.concurrent.duration.FiniteDuration
+import scala.util.Try
 
 /**
  * The sentinel analyzes information provided by the JMX interface of the Cassandra Node.
  * If the received values go out configured thresholds, the sentinel will send notifications/alerts.
  */
 abstract class Sentinel extends Actor with ActorLogging {
+
+  var nextReact = System.currentTimeMillis
+  val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   def conf : Config
 
@@ -32,7 +41,7 @@ abstract class Sentinel extends Actor with ActorLogging {
 
   protected def label() = conf.getString(Constants.CONF_LABEL)
 
-  protected def title() = s"[${level}] [${label}] Cassandra Sentinel found something"
+  protected def title() = s"[${level}][${label}][CASSANDRA] Sentinel '${self.path.name}' found something on '${HostnameProvider.hostname}'"
 
   protected def buildNotification(msg: String) : Notification = Notification(self.path.name, title, msg, level, label, HostnameProvider.hostname)
 

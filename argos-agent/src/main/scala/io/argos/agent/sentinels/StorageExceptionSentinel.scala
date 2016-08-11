@@ -17,9 +17,7 @@ import scala.util.Try
 
 class StorageExceptionSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
 
-  private var nextReact = System.currentTimeMillis
   private var previousValue : Long = 0
-  private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
 
   override def processProtocolElement: Receive = {
 

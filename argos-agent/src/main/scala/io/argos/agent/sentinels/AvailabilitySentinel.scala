@@ -1,29 +1,17 @@
 package io.argos.agent.sentinels
 
-import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
-import akka.event.EventStream
 import com.typesafe.config.Config
 import io.argos.agent.Constants
 import io.argos.agent.bean.{AvailabilityRequirements, Availability}
 import io.argos.agent.util.{HostnameProvider, CommonLoggerFactory}
 import Constants._
 import io.argos.agent.bean._
-import CommonLoggerFactory._
-import org.apache.cassandra.tools.NodeProbe
-
-import scala.collection.mutable
-import scala.concurrent.duration.FiniteDuration
-import scala.util.Try
 
 import scala.collection.JavaConverters._
 
 class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
-
-  private var nextReact = System.currentTimeMillis
-  private val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
-
 
   override def processProtocolElement: Receive = {
     case CheckMetrics() => if (System.currentTimeMillis >= nextReact) {
