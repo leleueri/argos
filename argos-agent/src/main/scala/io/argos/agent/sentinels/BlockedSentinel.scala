@@ -34,7 +34,7 @@ abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: Config) 
     val message =
       s"""Cassandra Node ${HostnameProvider.hostname} may be overloaded.
         |
-        |There are some blocked thread for the Type '${info.`type`}'
+        |Some actions are blocked for the Type '${info.`type`}'
         |
         |Currently blocked tasks : ${info.currentBlockedTasks}
         |Pending tasks           : ${info.pendingTasks}
