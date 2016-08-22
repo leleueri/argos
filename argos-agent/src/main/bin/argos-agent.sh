@@ -9,6 +9,8 @@ NAME="argos-agent"
 
 . $ARGOS_HOME/conf/argos-env.sh
 
+ARGOS_JAVA_OPTS=" -Xmx128m "
+
 case "$1" in
     start)
         # Cassandra startup
@@ -21,7 +23,7 @@ case "$1" in
                 exit 1
             fi
         fi
-        nohup $JAVA -cp "$ARGOS_CLASSPATH:$CLASSPATH" io.argos.agent.Launcher > $argos_log_file 2>&1 &
+        nohup $JAVA -cp "$ARGOS_CLASSPATH:$CLASSPATH"i $ARGOS_JAVA_OPTS io.argos.agent.Launcher > $argos_log_file 2>&1 &
         retval=$?
         pid=$!
         [ $retval -eq 0 ] && echo "$pid" > $argos_pid_file
