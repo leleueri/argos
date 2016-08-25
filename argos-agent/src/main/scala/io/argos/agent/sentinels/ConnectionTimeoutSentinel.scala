@@ -9,6 +9,8 @@ import io.argos.agent.util.HostnameProvider
 
 class ConnectionTimeoutSentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
 
+  private var previousValue = -1L
+
   override def processProtocolElement: Receive = {
 
     case CheckMetrics() => if (System.currentTimeMillis >= nextReact) metricsProvider ! MetricsRequest(ActorProtocol.ACTION_CHECK_CNX_TIMEOUT, Messages.CNX_TIMEOUT)
@@ -21,8 +23,11 @@ class ConnectionTimeoutSentinel(val metricsProvider: ActorRef, val conf: Config)
         log.debug("ConnectionTimeoutSentinel : Timeout, onMinRate=<{}>, total=<{}>", timeoutMsg.oneMinRate.toString, timeoutMsg.count.toString)
       }
 
-      if (timeoutMsg.oneMinRate > 0.0) {
+      if (timeoutMsg.oneMinRate > 0.0 && previousValue < timeoutMsg.count) {
         react(timeoutMsg)
+        previousValue = timeoutMsg.count
+      } else if (previousValue == -1) {
+        previousValue = timeoutMsg.count
       }
     }
   }

@@ -10,6 +10,8 @@ import io.argos.agent.util.HostnameProvider
 
 abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
 
+  private var previousValue = -1L
+
   def getReadRepairStats : MetricsRequest
 
   override def processProtocolElement: Receive = {
@@ -24,8 +26,11 @@ abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: Conf
         log.debug("ConsistencySentinel : ReadRepair Type=<{}>, onMinRate=<{}>, total=<{}>", readRepairMsg.`type`, readRepairMsg.oneMinRate.toString, readRepairMsg.count.toString)
       }
 
-      if (readRepairMsg.oneMinRate > conf.getInt(CONF_THRESHOLD)) {
+      if (readRepairMsg.oneMinRate > conf.getInt(CONF_THRESHOLD) && previousValue < readRepairMsg.count) {
         react(readRepairMsg)
+        previousValue = readRepairMsg.count
+      } else if (previousValue == -1) {
+        previousValue = readRepairMsg.count
       }
     }
   }

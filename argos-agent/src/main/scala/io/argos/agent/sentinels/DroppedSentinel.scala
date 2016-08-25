@@ -10,6 +10,8 @@ import io.argos.agent.bean._
 
 abstract class DroppedSentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
 
+  private var previousValue = -1L
+
   def getDroppedMessageStats : MetricsRequest
 
   override def processProtocolElement: Receive = {
@@ -24,8 +26,11 @@ abstract class DroppedSentinel(val metricsProvider: ActorRef, val conf: Config) 
         log.debug("DroppedSentinel : MessageType=<{}>, onMinRate=<{}>, totalDropped=<{}>", droppedMsg.`type`, droppedMsg.oneMinRate.toString, droppedMsg.count.toString)
       }
 
-      if (droppedMsg.oneMinRate > 0.0) {
-        react(droppedMsg)
+      if (previousValue > -1 && previousValue < droppedMsg.count){
+         react(droppedMsg)
+         previousValue = droppedMsg.count
+      } else if (previousValue == -1) {
+        previousValue = droppedMsg.count
       }
     }
   }
