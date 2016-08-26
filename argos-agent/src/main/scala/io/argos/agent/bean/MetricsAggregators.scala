@@ -21,7 +21,7 @@ case class ConnectionTimeoutStats(count: Long, fifteenMinRate: Double, fiveMinRa
 /**
  * This class contains the list of unreachable endpoints for a given consistency level and keyspace
  */
-case class Availability(keyspace: String, consistencyLevel: String, unreachableEndpoints: List[String], tokenRange: ArgosTokenRange)
+case class Availability(keyspace: String, consistencyLevel: String, unreachableEndpoints: List[String], tokenRanges: List[ArgosTokenRange])
 
 
 case class StorageSpaceInfo(path: String, usedSpace: Long, availableSpace: Long, totalSpace: Long, commitLog: Boolean) {

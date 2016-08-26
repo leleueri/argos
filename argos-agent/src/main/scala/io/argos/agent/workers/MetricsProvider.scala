@@ -130,7 +130,13 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
       .filter(_.isDefined) // keep endpoints with CL issue
       .map(_.get).toList
 
-    sender ! AvailabilityIssue(listOfAvailability)
+    val mergedByEndpointList = listOfAvailability.groupBy(_.unreachableEndpoints).map {
+      case (unreachEndpoint:List[String], details: List[Availability]) => {
+        details.foldLeft(details(0).copy(tokenRanges = List()))((collector, entry) => collector.copy(tokenRanges = collector.tokenRanges ::: entry.tokenRanges))
+      }
+    }.toList
+
+    sender ! AvailabilityIssue(mergedByEndpointList)
   }
 
   private def interpretTokenRangeString(tokenrange: String): ArgosTokenRange = {
@@ -163,7 +169,7 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
       if (consistencyLevel.startsWith("local")) range.endpointDetails.groupBy(_.dc)(localDC).map(_.host)
       else range.endpoints
 
-    val unreachNodes = targetEndpoints intersect(nodeProbe.getUnreachableNodes.asScala)
+    val unreachNodes = (targetEndpoints intersect(nodeProbe.getUnreachableNodes.asScala)).sorted
 
     val maxUnreachNodes = consistencyLevel match {
       case "one"|"local_one" => targetEndpoints.length - 1
@@ -179,7 +185,7 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
           cl, localDC,targetEndpoints.mkString(","),
           unreachNodes.mkString(","))
       }
-      Some(Availability(ks, cl, unreachNodes, range))
+      Some(Availability(ks, cl, unreachNodes, List(range)))
     } else
       None
   }

@@ -15,13 +15,13 @@ class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: Con
 
   override def processProtocolElement: Receive = {
     case CheckMetrics() => if (System.currentTimeMillis >= nextReact) {
-      val tt = for {
+      val availabilityCheckReq = for {
         pair <- conf.getConfigList(CONF_KEYSPACES).asScala.toList
         ks = pair.getString(CONF_KEYSPACE_NAME)
         cl = pair.getString(CONF_CONSISTENCY_LEVEL)
       } yield AvailabilityRequirements(ks, cl)
-      tt.foreach{
-        cc => metricsProvider ! cc
+      availabilityCheckReq.foreach{
+        req => metricsProvider ! req
       }
     }
     case AvailabilityIssue(issues) => react(issues)
@@ -33,18 +33,17 @@ class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: Con
       availabilityInfo =>
         val message = s"""Application may have consistency issue (detected by cassandra node '${HostnameProvider.hostname}')
                   |
-                  |Unreachable ${availabilityInfo.unreachableEndpoints.length} replica(s) for range[${availabilityInfo.tokenRange.start}, ${availabilityInfo.tokenRange.end}]
+                  |${availabilityInfo.unreachableEndpoints.length} replica(s) unreachable
                   |
-                  |Unreachable replicas : ${availabilityInfo.unreachableEndpoints.mkString("['", "', '", "']")}
                   |Keyspace : ${availabilityInfo.keyspace}
                   |Tested Consistency Level : ${availabilityInfo.consistencyLevel}
-                  |Endpoints details : ${availabilityInfo.tokenRange.endpointDetails}
+                  |Unreachable replicas : ${availabilityInfo.unreachableEndpoints.mkString("['", "', '", "']")}
                 """.stripMargin
 
         context.system.eventStream.publish(buildNotification(message))
     }
 
-    nextReact = System.currentTimeMillis + FREQUENCY
+    if (!info.isEmpty) nextReact = System.currentTimeMillis + FREQUENCY
 
     { }
   }
