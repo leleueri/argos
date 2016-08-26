@@ -51,6 +51,15 @@ Parameter | Type | Description
 jmx-host | `String` | IP on which the instance of Cassandra binds the JMX server (Default: 127.0.0.1)
 jmx-port | `Integer` | Listening port of the JMX Server (Default: 7199)
 
+Because the Metric Provider can send notification when the connection to the cassandra node is lost and reestablished, there are some optional configuration parameters.
+
+Parameter | Type | Description 
+--- | --- | ---
+node-down-label | `String` | Level of the notification when the Cassandra node is unreachable (Default: CRITIC)
+node-down-level | `String` | Label used into the notification *title* (Default: Cassandra node is DOWN)
+node-up-label | `String` |  Level of the notification when the Cassandra node comes back on line (Default: INFO)
+node-up-level | `String` | Label used into the notification *title* (Default: Cassandra node is UP)
+
 ### Sentinel
 
 A sentinel is an actor that control a specific information provided by the JMX interface of the Cassandra server. If the information is considered as " *wrong* ", the sentinel will will send a notification message to the `notifiers`.

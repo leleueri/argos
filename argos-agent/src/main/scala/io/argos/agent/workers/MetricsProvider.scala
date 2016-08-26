@@ -27,8 +27,13 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
 
   val hostname = jmxConfig.getString(CONF_ORCHESTRATOR_JMX_HOST)
   val port = jmxConfig.getInt(CONF_ORCHESTRATOR_JMX_PORT)
-  val user = None // TODO manage user/pwd
-  val pwd = None
+  val user = if (jmxConfig.hasPath(CONF_ORCHESTRATOR_JMX_USER)) Some(jmxConfig.getString(CONF_ORCHESTRATOR_JMX_USER)) else None
+  val pwd = if (jmxConfig.hasPath(CONF_ORCHESTRATOR_JMX_PWD)) Some(jmxConfig.getString(CONF_ORCHESTRATOR_JMX_PWD)) else None
+
+  val downLevel = jmxConfig.getString(CONF_ORCHESTRATOR_DOWN_LEVEL)
+  val downLabel = jmxConfig.getString(CONF_ORCHESTRATOR_DOWN_LABEL)
+  val upLevel = jmxConfig.getString(CONF_ORCHESTRATOR_UP_LEVEL)
+  val upLabel = jmxConfig.getString(CONF_ORCHESTRATOR_UP_LABEL)
 
   log.debug("Start MetricsProvider with params : hostname=<{}>, port=<{}>, user=<{}>, password=<{}>", hostname, port, user, pwd)
 
@@ -72,10 +77,10 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
         case ex: ConnectException =>
           log.warning("Connection error : {}", ex.getMessage, ex);
           context.system.eventStream.publish(
-            Notification(self.path.name, s"[CRITIC] Cassandra node ${HostnameProvider.hostname} is DOWN",
+            Notification(self.path.name, s"[${downLevel}] Cassandra node ${HostnameProvider.hostname} is DOWN",
               s"The node ${HostnameProvider.hostname} may be down!!!",
-              "CRITIC",
-              "Cassandra node is DOWN",
+              downLevel,
+              downLabel,
               HostnameProvider.hostname))
 
           context.become(offline) // become offline. this mode try to check the metrics but call logger with debug level
@@ -98,10 +103,10 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
 
       log.info("Reconnected to the cassandra node");
       context.system.eventStream.publish(
-        Notification(self.path.name, s"[INFO] Cassandra node ${HostnameProvider.hostname} is UP",
+        Notification(self.path.name, s"[${upLevel}] Cassandra node ${HostnameProvider.hostname} is UP",
           s"The node ${HostnameProvider.hostname} joins the cluster",
-          "INFO",
-          "Cassandra node is UP",
+          upLevel,
+          upLabel,
           HostnameProvider.hostname))
 
       context.unbecome // if checks succeeded, the connection is established with the Cassandra node, we can retrieve our nominal state
@@ -147,7 +152,7 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
 
   private def detectAvailabilityIssue(range: ArgosTokenRange, connectedEndpoint: String, cl: String, ks: String) : Option[Availability] = {
     val localDC = range.endpointDetails.filter(_.host == connectedEndpoint).head.dc
-    val consitencyLevel = cl.toLowerCase
+    val consistencyLevel = cl.toLowerCase
 
     if(log.isDebugEnabled) {
       log.debug("exec detectAvailabilityIssue: token=<"+ range.start +", " + range.end +">, ks=<{}>, cl=<{}>, local-dc=<{}>, allReplicas=<{}>",
@@ -155,12 +160,12 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
     }
     //
     val targetEndpoints =
-      if (consitencyLevel.startsWith("local")) range.endpointDetails.groupBy(_.dc)(localDC).map(_.host)
+      if (consistencyLevel.startsWith("local")) range.endpointDetails.groupBy(_.dc)(localDC).map(_.host)
       else range.endpoints
 
     val unreachNodes = targetEndpoints intersect(nodeProbe.getUnreachableNodes.asScala)
 
-    val maxUnreachNodes = consitencyLevel match {
+    val maxUnreachNodes = consistencyLevel match {
       case "one"|"local_one" => targetEndpoints.length - 1
       case "two" => targetEndpoints.length - 2
       case "three" => targetEndpoints.length - 3

@@ -15,6 +15,12 @@ object Constants {
   val CONF_OBJECT_ENTRY_METRICS = "argos.metrics"
   val CONF_ORCHESTRATOR_JMX_HOST = "jmx-host"
   val CONF_ORCHESTRATOR_JMX_PORT = "jmx-port"
+  val CONF_ORCHESTRATOR_JMX_USER = "jmx-user"
+  val CONF_ORCHESTRATOR_JMX_PWD = "jmx-pwd"
+  val CONF_ORCHESTRATOR_DOWN_LABEL = "node-down-label"
+  val CONF_ORCHESTRATOR_DOWN_LEVEL = "node-down-level"
+  val CONF_ORCHESTRATOR_UP_LABEL = "node-up-label"
+  val CONF_ORCHESTRATOR_UP_LEVEL = "node-up-level"
 
   val CONF_OBJECT_ENTRY_SENTINEL = "argos.sentinel."
   val CONF_OBJECT_ENTRY_SENTINEL_LOADAVG = CONF_OBJECT_ENTRY_SENTINEL+"load-avg"
