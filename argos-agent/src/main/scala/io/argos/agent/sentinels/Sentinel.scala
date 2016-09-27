@@ -11,6 +11,7 @@ import io.argos.agent.bean.{CheckMetrics, Notification}
 import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean.CheckMetrics
 
+import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 

@@ -26,14 +26,14 @@ class TestBlockedSentinel extends TestKit(ActorSystem("TestDroppedSentinel")) wi
     notificationProbe.ref,
     classOf[Notification])
 
-  val blockedCounterActor = system.actorOf(Props(classOf[CounterMutationBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_COUNTER_MUTATION)))
-  val blockedGossipActor = system.actorOf(Props(classOf[GossipBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_GOSSIP)))
-  val blockedMutationActor = system.actorOf(Props(classOf[MutationBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MUTATION)))
-  val blockedReadActor = system.actorOf(Props(classOf[ReadBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ)))
-  val blockedReadRepairActor = system.actorOf(Props(classOf[ReadRepairBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ_REPAIR)))
-  val blockedInternalActor = system.actorOf(Props(classOf[InternalResponseBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_INTERNAL)))
-  val blockedMemtableActor = system.actorOf(Props(classOf[MemtableFlusherBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_MEMTABLE)))
-  val blockedCompatcActor = system.actorOf(Props(classOf[CompactionExecBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STAGE_COMPACTION)))
+  val blockedCounterActor = system.actorOf(Props(classOf[CounterMutationBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_COUNTER_MUTATION)))
+  val blockedGossipActor = system.actorOf(Props(classOf[GossipBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_GOSSIP)))
+  val blockedMutationActor = system.actorOf(Props(classOf[MutationBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_MUTATION)))
+  val blockedReadActor = system.actorOf(Props(classOf[ReadBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_READ)))
+  val blockedReadRepairActor = system.actorOf(Props(classOf[ReadRepairBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_READ_REPAIR)))
+  val blockedInternalActor = system.actorOf(Props(classOf[InternalResponseBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_INTERNAL)))
+  val blockedMemtableActor = system.actorOf(Props(classOf[MemtableFlusherBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_MEMTABLE)))
+  val blockedCompatcActor = system.actorOf(Props(classOf[CompactionExecBlockedSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_COMPACTION)))
 
   override def afterAll() {
     system.terminate()
