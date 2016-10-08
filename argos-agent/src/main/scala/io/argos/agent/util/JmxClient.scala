@@ -219,6 +219,15 @@ abstract class JmxClient(hostname: String, port: Int, user: Option[String] = Non
       values.get(3).asInstanceOf[Attribute].getValue.toString.toDouble,
       values.get(4).asInstanceOf[Attribute].getValue.toString.toDouble)
   }
+
+
+  def getGCInspector(  ) : GCState =  {
+    val values = mbeanServerCnx.getAttribute(new ObjectName("org.apache.cassandra.service:type=GCInspector"), "AndResetStats")
+
+    val dbl = values.asInstanceOf[Array[Double]]
+
+    GCState(dbl(0),dbl(1),dbl(2),dbl(3),dbl(4),dbl(5),dbl(6))
+  }
 }
 
 class JmxClientCassandra21(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) extends JmxClient(hostname, port, user, pwd)  {

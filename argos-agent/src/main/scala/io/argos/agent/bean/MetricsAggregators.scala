@@ -23,6 +23,9 @@ case class ConnectionTimeoutStats(count: Long, fifteenMinRate: Double, fiveMinRa
  */
 case class Availability(keyspace: String, consistencyLevel: String, unreachableEndpoints: List[String], tokenRanges: List[ArgosTokenRange])
 
+case class GCState(statePeriod: Double, maxRealTimeElapsed: Double, totalRealTimeElapsed: Double, sumSquaresRealTimeElapsed: Double, totalBytesReclaimed: Double, count: Double, allocatedDirectMemory: Double) {
+  def gcMeanElapsedTime() = totalRealTimeElapsed / count
+}
 
 case class StorageSpaceInfo(path: String, usedSpace: Long, availableSpace: Long, totalSpace: Long, commitLog: Boolean) {
 

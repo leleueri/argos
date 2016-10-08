@@ -198,6 +198,17 @@ label | `String` | Label used into the notification *title*
 threshold | `Integer` | Percentage of available space required for the data directories
 commitlog-threshold | `Integer` | Percentage of available space required for the commtilog directory
 
+#### GC Inspector
+
+This sentinel examines the duration of GC. If a GC duration is too long (bigger than the threshold), a notification is triggered.
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+threshold | `Integer` | max duration (in ms) for a GC
+
 #### JMX notification
 
 This sentinel send a notification if the JMX listener is informed about a ERROR or an ABORTED operation (like a repair)
@@ -363,6 +374,12 @@ argos {
       enabled= true
       level= "CRITIC"
       label= "Network partition"
+    }
+    gc-inspector{
+      enabled= true
+      level= "WARNING"
+      label= "GC too long"
+      threshold= 200
     }
     blocked-stage-counter {
       enabled= true

@@ -5,7 +5,6 @@ import java.util.concurrent.{Executors, TimeUnit}
 import akka.actor.{Actor, ActorLogging, Props}
 import com.typesafe.config.ConfigFactory
 import io.argos.agent.bean.{CheckMetrics, CheckNodeStatus}
-import io.argos.agent.sentinels._
 import io.argos.agent.workers.MetricsProvider
 import Constants._
 import io.argos.agent.sentinels._
@@ -14,7 +13,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import io.argos.agent.bean._
 import Messages._
-import io.argos.agent.util.CassandraVersion
+import org.apache.cassandra.service.GCInspector
 
 
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
@@ -75,6 +74,8 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   startSentinel(classOf[StorageSpaceSentinel], CONF_OBJECT_ENTRY_SENTINEL_STORAGE_SPACE)
   startSentinel(classOf[StorageHintsSentinel], CONF_OBJECT_ENTRY_SENTINEL_STORAGE_HINTS)
   startSentinel(classOf[StorageExceptionSentinel], CONF_OBJECT_ENTRY_SENTINEL_STORAGE_EXCEPTION)
+
+  startSentinel(classOf[GCSentinel], CONF_OBJECT_ENTRY_SENTINEL_GC )
 
   startSentinel(classOf[AvailabilitySentinel], CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE)
 
