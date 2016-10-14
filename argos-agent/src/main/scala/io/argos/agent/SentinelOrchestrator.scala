@@ -5,7 +5,6 @@ import java.util.concurrent.{Executors, TimeUnit}
 import akka.actor.{Actor, ActorLogging, Props}
 import com.typesafe.config.ConfigFactory
 import io.argos.agent.bean.{CheckMetrics, CheckNodeStatus}
-import io.argos.agent.sentinels._
 import io.argos.agent.workers.MetricsProvider
 import Constants._
 import io.argos.agent.sentinels._
@@ -14,7 +13,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import io.argos.agent.bean._
 import Messages._
-import io.argos.agent.util.CassandraVersion
+import org.apache.cassandra.service.GCInspector
 
 
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
@@ -52,19 +51,31 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   startSentinel(classOf[DroppedRangeSliceSentinel], CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE)
   startSentinel(classOf[DroppedRequestResponseSentinel], CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP)
 
-  startSentinel(classOf[CounterMutationBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_COUNTER_MUTATION)
-  startSentinel(classOf[GossipBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_GOSSIP)
-  startSentinel(classOf[InternalResponseBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_INTERNAL)
-  startSentinel(classOf[MemtableFlusherBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_MEMTABLE)
-  startSentinel(classOf[MutationBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_MUTATION)
-  startSentinel(classOf[ReadBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ)
-  startSentinel(classOf[CompactionExecBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_COMPACTION)
-  startSentinel(classOf[ReadRepairBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_READ_REPAIR)
-  startSentinel(classOf[RequestResponseBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_STAGE_REQUEST_RESPONSE)
+  startSentinel(classOf[CounterMutationBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_COUNTER_MUTATION)
+  startSentinel(classOf[GossipBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_GOSSIP)
+  startSentinel(classOf[InternalResponseBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_INTERNAL)
+  startSentinel(classOf[MemtableFlusherBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_MEMTABLE)
+  startSentinel(classOf[MutationBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_MUTATION)
+  startSentinel(classOf[ReadBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_READ)
+  startSentinel(classOf[CompactionExecBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_COMPACTION)
+  startSentinel(classOf[ReadRepairBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_READ_REPAIR)
+  startSentinel(classOf[RequestResponseBlockedSentinel], CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_REQUEST_RESPONSE)
+
+  startSentinel(classOf[CounterMutationPendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_COUNTER_MUTATION)
+  startSentinel(classOf[GossipPendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_GOSSIP)
+  startSentinel(classOf[InternalResponsePendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_INTERNAL)
+  startSentinel(classOf[MemtableFlusherPendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_MEMTABLE)
+  startSentinel(classOf[MutationPendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_MUTATION)
+  startSentinel(classOf[ReadPendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_READ)
+  startSentinel(classOf[CompactionExecPendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_COMPACTION)
+  startSentinel(classOf[ReadRepairPendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_READ_REPAIR)
+  startSentinel(classOf[RequestResponsePendingSentinel], CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_REQUEST_RESPONSE)
 
   startSentinel(classOf[StorageSpaceSentinel], CONF_OBJECT_ENTRY_SENTINEL_STORAGE_SPACE)
   startSentinel(classOf[StorageHintsSentinel], CONF_OBJECT_ENTRY_SENTINEL_STORAGE_HINTS)
   startSentinel(classOf[StorageExceptionSentinel], CONF_OBJECT_ENTRY_SENTINEL_STORAGE_EXCEPTION)
+
+  startSentinel(classOf[GCSentinel], CONF_OBJECT_ENTRY_SENTINEL_GC )
 
   startSentinel(classOf[AvailabilitySentinel], CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE)
 

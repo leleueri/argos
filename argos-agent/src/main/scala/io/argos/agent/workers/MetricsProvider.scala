@@ -69,6 +69,7 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
           case MetricsRequest(ACTION_CHECK_STORAGE_EXCEPTION, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_EXCEPTION, Some(jmxClient.getStorageMetricExceptions()))
           case MetricsRequest(ACTION_CHECK_READ_REPAIR, msgType) => sender ! MetricsResponse(ACTION_CHECK_READ_REPAIR, Some(jmxClient.getReadRepairs(msgType)))
           case MetricsRequest(ACTION_CHECK_CNX_TIMEOUT, msgType) => sender ! MetricsResponse(ACTION_CHECK_CNX_TIMEOUT, Some(jmxClient.getConnectionTimeouts()))
+          case MetricsRequest(ACTION_CHECK_GC, msgType) => sender ! MetricsResponse(ACTION_CHECK_GC, Some(jmxClient.getGCInspector()))
         }
 
       } catch {

@@ -12,7 +12,7 @@ import org.scalatest._
 /**
  * Created by eric on 05/07/16.
  */
-class TestConsistencySentinel extends TestKit(ActorSystem("TestDroppedSentinel")) with FlatSpecLike with Matchers with BeforeAndAfterAll {
+class TestConsistencySentinel extends TestKit(ActorSystem("TestConsistencySentinel")) with FlatSpecLike with Matchers with BeforeAndAfterAll {
 
   val globalConfig = ConfigFactory.load()
   val configJmx = globalConfig.getConfig(CONF_OBJECT_ENTRY_METRICS)

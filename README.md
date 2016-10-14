@@ -125,23 +125,46 @@ label | `String` | Label used into the notification *title*
 
 #### Blocked tasks sentinel
 
-These sentinels examine the number of blocked tasks and send a notification if the result is different of 0. There are one sentinel per type of ThreadPool.
+These sentinels examines the number of blocked tasks and send a notification if the result is different of 0. There are one sentinel per type of ThreadPool.
 
-* stage-counter
-* stage-gossip
-* stage-internal
-* stage-memtable
-* stage-mutation
-* stage-read
-* stage-read-repair
-* stage-request-response
-* stage-compaction
+* blocked-stage-counter
+* blocked-stage-gossip
+* blocked-stage-internal
+* blocked-stage-memtable
+* blocked-stage-mutation
+* blocked-stage-read
+* blocked-stage-read-repair
+* blocked-stage-request-response
+* blocked-stage-compaction
 
 Parameter | Type | Description 
 --- | --- | ---
 enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
 level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
+
+#### Pending tasks sentinel
+
+These sentinels examines the number of pending tasks and send a notification if the result exceed the threshold. There are one sentinel per type of ThreadPool.
+Because having too many pending tasks may be not an issue, these sentinels cumulates the ThreadPool state in a queue and throws a notification only if all states present into the buffer exceed the limit.
+
+* pending-stage-counter
+* pending-stage-gossip
+* pending-stage-internal
+* pending-stage-memtable
+* pending-stage-mutation
+* pending-stage-read
+* pending-stage-read-repair
+* pending-stage-request-response
+* pending-stage-compaction
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+window-size | `Integer` | the size of the buffer (default: 5)
+threshold | `Integer` | The maximum value authorized (default : 25)
 
 #### Storage Exception
 
@@ -174,6 +197,17 @@ level | `String` | Level of the notification
 label | `String` | Label used into the notification *title*
 threshold | `Integer` | Percentage of available space required for the data directories
 commitlog-threshold | `Integer` | Percentage of available space required for the commtilog directory
+
+#### GC Inspector
+
+This sentinel examines the duration of GC. If a GC duration is too long (bigger than the threshold), a notification is triggered.
+
+Parameter | Type | Description 
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+threshold | `Integer` | max duration (in ms) for a GC
 
 #### JMX notification
 
@@ -341,47 +375,53 @@ argos {
       level= "CRITIC"
       label= "Network partition"
     }
-    stage-counter {
+    gc-inspector{
+      enabled= true
+      level= "WARNING"
+      label= "GC too long"
+      threshold= 200
+    }
+    blocked-stage-counter {
       enabled= true
       level= "WARNING"
       label= "Stage counter mutation"
     }
-    stage-gossip {
+    blocked-stage-gossip {
       enabled= true
       level= "WARNING"
       label= "Stage gossip"
     }
-    stage-internal {
+    blocked-stage-internal {
       enabled= true
       level= "WARNING"
       label= "Stage Internal Response"
     }
-    stage-memtable {
+    blocked-stage-memtable {
       enabled= true
       level= "WARNING"
       label= "Stage Memtable Write Flusher"
     }
-    stage-mutation {
+    blocked-stage-mutation {
       enabled= true
       level= "WARNING"
       label= "Stage Mutation"
     }
-    stage-read {
+    blocked-stage-read {
       enabled= true
       level= "WARNING"
       label= "Stage Read"
     }
-    stage-read-repair {
+    blocked-stage-read-repair {
       enabled= true
       level= "WARNING"
       label= "Stage ReadRepair"
     }
-    stage-request-response {
+    blocked-stage-request-response {
       enabled= true
       level= "WARNING"
       label= "Stage Request Response"
     }
-    stage-compaction {
+    blocked-stage-compaction {
       enabled= true
       level= "WARNING"
       label= "Stage Compaction Executor"
@@ -390,6 +430,69 @@ argos {
       enabled= true
       level= "INFO"
       label= "Progress Event"
+    }
+    pending-stage-counter {
+      enabled= true
+      level= "WARNING"
+      label= "Stage counter mutation - pending"
+      threshold= 25
+      window-size= 10
+    }
+    pending-stage-gossip {
+      enabled= true
+      level= "WARNING"
+      label= "Stage gossip - pending"
+      threshold= 25
+      window-size= 10
+    }
+    pending-stage-internal {
+      enabled= true
+      level= "WARNING"
+      label= "Stage Internal Response - pending"
+      threshold= 25
+      window-size= 10
+    }
+    pending-stage-memtable {
+      enabled= true
+      level= "WARNING"
+      label= "Stage Memtable Write Flusher - pending"
+      threshold= 25
+      window-size= 10
+    }
+    pending-stage-mutation {
+      enabled= true
+      level= "WARNING"
+      label= "Stage Mutation - pending"
+      threshold= 25
+      window-size= 10
+    }
+    pending-stage-read {
+      enabled= true
+      level= "WARNING"
+      label= "Stage Read - pending"
+      threshold= 25
+      window-size= 10
+    }
+    pending-stage-read-repair {
+      enabled= true
+      level= "WARNING"
+      label= "Stage ReadRepair - pending"
+      threshold= 25
+      window-size= 10
+    }
+    pending-stage-request-response {
+      enabled= true
+      level= "WARNING"
+      label= "Stage Request Response - pending"
+      threshold= 25
+      window-size= 10
+    }
+    pending-stage-compaction {
+      enabled= true
+      level= "WARNING"
+      label= "Stage Compaction Executor - pending"
+      threshold= 25
+      window-size= 10
     }
   }
   notifiers {

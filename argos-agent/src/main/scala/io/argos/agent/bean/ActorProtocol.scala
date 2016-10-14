@@ -13,6 +13,7 @@ object ActorProtocol {
   val ACTION_CHECK_STORAGE_EXCEPTION = "STORAGE_EXC"
   val ACTION_CHECK_READ_REPAIR = "READ_REPAIR"
   val ACTION_CHECK_CNX_TIMEOUT = "CNX_TIMEOUT"
+  val ACTION_CHECK_GC = "GC_INSPECTOR"
 }
 
 case class MetricsRequest(metricsName: String, param: String)
