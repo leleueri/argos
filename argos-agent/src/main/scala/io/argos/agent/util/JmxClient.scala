@@ -226,7 +226,10 @@ abstract class JmxClient(hostname: String, port: Int, user: Option[String] = Non
 
     val dbl = values.asInstanceOf[Array[Double]]
 
-    GCState(dbl(0),dbl(1),dbl(2),dbl(3),dbl(4),dbl(5),dbl(6))
+    if (dbl.size < 7) // Cassandra 2.1 only have 6 entries (the getAllocatedDirectMemory entry is missing)
+      GCState(dbl(0),dbl(1),dbl(2),dbl(3),dbl(4),dbl(5), -1)
+    else
+      GCState(dbl(0),dbl(1),dbl(2),dbl(3),dbl(4),dbl(5),dbl(6))
   }
 }
 

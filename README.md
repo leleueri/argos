@@ -433,63 +433,63 @@ argos {
     }
     pending-stage-counter {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage counter mutation - pending"
       threshold= 25
       window-size= 10
     }
     pending-stage-gossip {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage gossip - pending"
       threshold= 25
       window-size= 10
     }
     pending-stage-internal {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage Internal Response - pending"
       threshold= 25
       window-size= 10
     }
     pending-stage-memtable {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage Memtable Write Flusher - pending"
       threshold= 25
       window-size= 10
     }
     pending-stage-mutation {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage Mutation - pending"
       threshold= 25
       window-size= 10
     }
     pending-stage-read {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage Read - pending"
       threshold= 25
       window-size= 10
     }
     pending-stage-read-repair {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage ReadRepair - pending"
       threshold= 25
       window-size= 10
     }
     pending-stage-request-response {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage Request Response - pending"
       threshold= 25
       window-size= 10
     }
     pending-stage-compaction {
       enabled= true
-      level= "WARNING"
+      level= "INFO"
       label= "Stage Compaction Executor - pending"
       threshold= 25
       window-size= 10
