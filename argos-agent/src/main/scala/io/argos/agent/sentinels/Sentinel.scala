@@ -22,7 +22,7 @@ import scala.util.Try
 abstract class Sentinel extends Actor with ActorLogging {
 
   var nextReact = System.currentTimeMillis
-  val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(5, TimeUnit.MINUTES).toMillis)
+  val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(15, TimeUnit.MINUTES).toMillis)
 
   def conf : Config
 

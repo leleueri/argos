@@ -1,13 +1,18 @@
 package io.argos.agent.sentinels
 
+import java.util
+import javax.management.Notification
+
 import com.typesafe.config.Config
 import io.argos.agent.Constants
 import io.argos.agent.bean.{CheckMetrics, JmxNotification}
 import io.argos.agent.util.{CassandraVersion, CommonLoggerFactory, HostnameProvider}
 import Constants._
 import CommonLoggerFactory._
+import org.apache.cassandra.streaming.{StreamEvent, StreamManagerMBean}
 
 import scala.collection.JavaConverters._
+
 /**
   * Created by eric on 24/02/16.
   *
@@ -24,19 +29,68 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
 
   override def processProtocolElement: Receive = {
     case CheckMetrics() => {} // nothing to do on checkMetrics
-    case JmxNotification(notification) =>
-      val data = notification.getUserData.asInstanceOf[java.util.HashMap[String, Int]].asScala
-      if (commonLogger.isDebugEnabled) {
-        commonLogger.debug(this, "Receive JMX notification=<{}>", data.toString())
-      }
-      if (data("type") == ERROR_STATUS ) sendErrorStatus(notification, data)
-      else if (data("type") == ABORT_STATUS && CassandraVersion.version > 2.1) sendAbortStatus(notification, data)
+    case JmxNotification(notification) if notification.getSource().equals(StreamManagerMBean.OBJECT_NAME) =>
+      manageSteamNotification(notification)
+    case JmxNotification(notification) if notification.getSource().toString.startsWith("bootstrap") =>
+      manageNotificationWithHashMap(notification)
+    case JmxNotification(notification) if notification.getSource().toString.startsWith("repair") =>
+      manageRepairNotification(notification)
+    case JmxNotification(unknownNotif) => log.debug("Unknown JMXNotification : source={}, type={}", unknownNotif.getSource, unknownNotif.getType);
   }
 
-  def sendErrorStatus(notification: javax.management.Notification, data: collection.mutable.Map[String, Int]) = sendStatus(notification, data, "A progess has failed ")
-  def sendAbortStatus(notification: javax.management.Notification, data: collection.mutable.Map[String, Int]) = sendStatus(notification, data, "A progess was aborted ")
+  private def manageSteamNotification(notification: Notification): Unit = {
+    if ((classOf[StreamEvent].getCanonicalName + ".failure").equals(notification.getType())) {
 
-  def sendStatus(notification: javax.management.Notification, data: collection.mutable.Map[String, Int], msg : String) = {
+      val message =
+        s"""Stream process failed on Cassandra Node ${HostnameProvider.hostname}.
+            |
+         |stacktrace : ${notification.getUserData}
+            |
+         |notification : ${notification}
+            |
+         |""".stripMargin
+
+      context.system.eventStream.publish(buildNotification(message))
+    }
+  }
+
+  private def manageRepairNotification(notification: Notification): Unit = {
+    if (notification.getUserData.isInstanceOf[util.HashMap]) {
+      manageNotificationWithHashMap(notification);
+    } else {
+
+      // array of integer (LegacyJmxNotification)
+      val data = notification.getUserData.asInstanceOf[Array[Int]]
+      if (commonLogger.isDebugEnabled) {
+        commonLogger.debug(this, "Receive JMX notification=<{}> with userData = <{}>", notification.getType, data.toString())
+      }
+
+      val msg = if (data(1) == ERROR_STATUS) s"${notification.getSource} has failed "
+      else if (data(1) == ABORT_STATUS && CassandraVersion.version > 2.1) s"${notification.getSource} was aborted "
+
+      val action = notification.getSource
+
+      val message =
+        s"""${msg} for Cassandra Node ${HostnameProvider.hostname}.
+           |
+           |action   : ${action}
+           |notification : ${notification}
+           |
+       |""".stripMargin
+
+      context.system.eventStream.publish(buildNotification(message))
+    }
+  }
+
+  private def manageNotificationWithHashMap(notification: Notification): Unit = {
+    val data = notification.getUserData.asInstanceOf[util.HashMap[String, Int]].asScala
+    if (commonLogger.isDebugEnabled) {
+      commonLogger.debug(this, "Receive JMX notification=<{}> with userData = <{}>", notification.getType, data.toString())
+    }
+
+    val msg = if (data("type") == ERROR_STATUS) s"${notification.getSource} has failed "
+    else if (data("type") == ABORT_STATUS && CassandraVersion.version > 2.1) s"${notification.getSource} was aborted "
+
     val percent = 100 * data("progressCount") / data("total")
     val action = notification.getSource
 
@@ -51,6 +105,7 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
 
     context.system.eventStream.publish(buildNotification(message))
   }
+
 
 }
 

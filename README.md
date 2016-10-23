@@ -39,7 +39,7 @@ An additional parameter `scheduler-interval` is available to define the delay be
 
 Parameter | Type | Description 
 --- | --- | ---
-scheduler-interval | `Duration` | Duration between two Metrics validation (Default: 5 seconds)
+scheduler-interval | `Duration` | Duration between two Metrics validation (Default: 60 seconds)
 cassandra-version | `Double` | the cassandra version x.y (ex: 2.1) (Default: 3.0)
 
 ### Metrics
@@ -237,7 +237,7 @@ The "keyspace" object has two attributes :
 #### Period
 
 Each sentinel may configure the 'period' between two notifications to avoid flooding the alert receiver.
-By default, the period between two alerts is set to 5 minutes (excepted for disk capacity, the period is 4 H)
+By default, the period between two alerts is set to 15 minutes (excepted for disk capacity, the period is 4 H)
 
 ### Notifiers
 
