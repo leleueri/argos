@@ -55,9 +55,9 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
   }
 
   private def manageRepairNotification(notification: Notification): Unit = {
-    if (notification.getUserData.isInstanceOf[util.HashMap]) {
+    if (notification.getUserData.isInstanceOf[util.HashMap[String, Int]]) {
       manageNotificationWithHashMap(notification);
-    } else {
+    } else if (notification.getUserData.isInstanceOf[Array[Int]]) {
 
       // array of integer (LegacyJmxNotification)
       val data = notification.getUserData.asInstanceOf[Array[Int]]
@@ -65,22 +65,27 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
         commonLogger.debug(this, "Receive JMX notification=<{}> with userData = <{}>", notification.getType, data.toString())
       }
 
-      val msg = if (data(1) == ERROR_STATUS) s"${notification.getSource} has failed "
-      else if (data(1) == ABORT_STATUS && CassandraVersion.version > 2.1) s"${notification.getSource} was aborted "
+      val status: Int = data(1)
+      if (hasFailed(status)) {
+        val msg = if (status == ERROR_STATUS) s"${notification.getSource} has failed "
+        else if (status == ABORT_STATUS && CassandraVersion.version > 2.1) s"${notification.getSource} was aborted "
 
-      val action = notification.getSource
+        val action = notification.getSource
 
-      val message =
-        s"""${msg} for Cassandra Node ${HostnameProvider.hostname}.
+        val message =
+          s"""${msg} for Cassandra Node ${HostnameProvider.hostname}
            |
            |action   : ${action}
            |notification : ${notification}
            |
-       |""".stripMargin
+           |""".stripMargin
 
-      context.system.eventStream.publish(buildNotification(message))
+        context.system.eventStream.publish(buildNotification(message))
+      }
     }
   }
+
+  private def hasFailed(status: Int) : Boolean = (status == ERROR_STATUS || (status == ABORT_STATUS && CassandraVersion.version > 2.1))
 
   private def manageNotificationWithHashMap(notification: Notification): Unit = {
     val data = notification.getUserData.asInstanceOf[util.HashMap[String, Int]].asScala
@@ -88,25 +93,26 @@ class InternalNotificationsSentinel(override val conf: Config) extends Sentinel 
       commonLogger.debug(this, "Receive JMX notification=<{}> with userData = <{}>", notification.getType, data.toString())
     }
 
-    val msg = if (data("type") == ERROR_STATUS) s"${notification.getSource} has failed "
-    else if (data("type") == ABORT_STATUS && CassandraVersion.version > 2.1) s"${notification.getSource} was aborted "
+    val status = data("type")
+    if (hasFailed(status)) {
+      val msg = if (status == ERROR_STATUS) s"${notification.getSource} has failed "
+      else if (status == ABORT_STATUS && CassandraVersion.version > 2.1) s"${notification.getSource} was aborted "
 
-    val percent = 100 * data("progressCount") / data("total")
-    val action = notification.getSource
+      val percent = 100 * data("progressCount") / data("total")
+      val action = notification.getSource
 
-    val message =
-      s"""${msg} for Cassandra Node ${HostnameProvider.hostname}.
-         |
-         |action   : ${action}
-         |progress : ${percent}%
-         |notification : ${notification}
-         |
-         |""".stripMargin
+      val message =
+        s"""${msg} for Cassandra Node ${HostnameProvider.hostname}.
+           |
+           |action   : ${action}
+           |progress : ${percent}%
+           |notification : ${notification}
+           |
+           |""".stripMargin
 
-    context.system.eventStream.publish(buildNotification(message))
+      context.system.eventStream.publish(buildNotification(message))
+    }
   }
-
-
 }
 
 /*
