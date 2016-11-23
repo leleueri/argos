@@ -40,3 +40,5 @@ case class StorageSpaceInfo(path: String, usedSpace: Long, availableSpace: Long,
     expectedAvailableSpace > availableSpace
   }
 }
+
+case class JmxAttrValue (name: String, attr: String, value: Double)

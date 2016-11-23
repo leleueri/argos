@@ -40,6 +40,8 @@ object Constants {
   val CONF_OBJECT_ENTRY_SENTINEL_GC = CONF_OBJECT_ENTRY_SENTINEL+"gc-inspector"
   val CONF_OBJECT_ENTRY_SENTINEL_STORAGE_HINTS = CONF_OBJECT_ENTRY_SENTINEL+"storage-hints"
 
+  val CONF_OBJECT_ENTRY_SENTINEL_CUSTOM = CONF_OBJECT_ENTRY_SENTINEL+"custom-sentinels"
+
   val CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_COUNTER_MUTATION = CONF_OBJECT_ENTRY_SENTINEL+"blocked-stage-counter"
   val CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_GOSSIP = CONF_OBJECT_ENTRY_SENTINEL+"blocked-stage-gossip"
   val CONF_OBJECT_ENTRY_SENTINEL_BLOCKED_STAGE_INTERNAL = CONF_OBJECT_ENTRY_SENTINEL+"blocked-stage-internal"
@@ -71,6 +73,10 @@ object Constants {
   val CONF_WINDOW_SIZE = "window-size"
   val CONF_WINDOW_MEAN = "check-mean"
   val CONF_COMMIT_LOG_THRESHOLD = "commitlog-threshold"
+
+  val CONF_JMX_NAME = "objectName"
+  val CONF_JMX_ATTR = "objectAttr"
+  val CONF_EPSILON = "precision"
 
   val CONF_KEYSPACES = "keyspaces"
   val CONF_KEYSPACE_NAME = "name"

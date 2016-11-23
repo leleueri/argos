@@ -58,41 +58,47 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
     }
     case req : MetricsRequest => {
       log.debug(s"MetricsProvider receives ${req}")
-      try {
-
-        req match {
-          case MetricsRequest(ACTION_CHECK_DROPPED_MESSAGES, msgType) => sender ! MetricsResponse(ACTION_CHECK_DROPPED_MESSAGES, Some(jmxClient.getDroppedMessages(msgType)))
-          case MetricsRequest(ACTION_CHECK_INTERNAL_STAGE, msgType) => sender ! MetricsResponse(ACTION_CHECK_INTERNAL_STAGE, Some(jmxClient.getInternalStageValue(msgType)))
-          case MetricsRequest(ACTION_CHECK_STAGE, msgType) => sender ! MetricsResponse(ACTION_CHECK_STAGE, Some(jmxClient.getStageValue(msgType)))
-          case MetricsRequest(ACTION_CHECK_STORAGE_SPACE, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_SPACE, Some(jmxClient.getStorageSpaceInformation()))
-          case MetricsRequest(ACTION_CHECK_STORAGE_HINTS, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_HINTS, Some(jmxClient.getStorageHints()))
-          case MetricsRequest(ACTION_CHECK_STORAGE_EXCEPTION, msgType) => sender ! MetricsResponse(ACTION_CHECK_STORAGE_EXCEPTION, Some(jmxClient.getStorageMetricExceptions()))
-          case MetricsRequest(ACTION_CHECK_READ_REPAIR, msgType) => sender ! MetricsResponse(ACTION_CHECK_READ_REPAIR, Some(jmxClient.getReadRepairs(msgType)))
-          case MetricsRequest(ACTION_CHECK_CNX_TIMEOUT, msgType) => sender ! MetricsResponse(ACTION_CHECK_CNX_TIMEOUT, Some(jmxClient.getConnectionTimeouts()))
-          case MetricsRequest(ACTION_CHECK_GC, msgType) => sender ! MetricsResponse(ACTION_CHECK_GC, Some(jmxClient.getGCInspector()))
-        }
-
-      } catch {
-        case ex: InstanceNotFoundException =>
-          log.info("JMX Instance not found : {}", ex.getMessage)
-        case ex: ConnectException =>
-          log.warning("Connection error : {}", ex.getMessage, ex);
-          context.system.eventStream.publish(
-            Notification(self.path.name, s"[${downLevel}] Cassandra node ${HostnameProvider.hostname} is DOWN",
-              s"The node ${HostnameProvider.hostname} may be down!!!",
-              downLevel,
-              downLabel,
-              HostnameProvider.hostname))
-
-          context.become(offline) // become offline. this mode try to check the metrics but call logger with debug level
-          context.parent ! NodeStatus(OFFLINE_NODE)
-        case ex: IOException =>
-          log.warning("Unexpected IO Exception : {}", ex.getMessage, ex) // do we have to become offline in this case??
+      req match {
+        case MetricsRequest(ACTION_CHECK_DROPPED_MESSAGES, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_DROPPED_MESSAGES, Some(jmxClient.getDroppedMessages(msgType))))
+        case MetricsRequest(ACTION_CHECK_INTERNAL_STAGE, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_INTERNAL_STAGE, Some(jmxClient.getInternalStageValue(msgType))))
+        case MetricsRequest(ACTION_CHECK_STAGE, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_STAGE, Some(jmxClient.getStageValue(msgType))))
+        case MetricsRequest(ACTION_CHECK_STORAGE_SPACE, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_STORAGE_SPACE, Some(jmxClient.getStorageSpaceInformation())))
+        case MetricsRequest(ACTION_CHECK_STORAGE_HINTS, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_STORAGE_HINTS, Some(jmxClient.getStorageHints())))
+        case MetricsRequest(ACTION_CHECK_STORAGE_EXCEPTION, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_STORAGE_EXCEPTION, Some(jmxClient.getStorageMetricExceptions())))
+        case MetricsRequest(ACTION_CHECK_READ_REPAIR, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_READ_REPAIR, Some(jmxClient.getReadRepairs(msgType))))
+        case MetricsRequest(ACTION_CHECK_CNX_TIMEOUT, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_CNX_TIMEOUT, Some(jmxClient.getConnectionTimeouts())))
+        case MetricsRequest(ACTION_CHECK_GC, msgType) => requestMetric (MetricsResponse(ACTION_CHECK_GC, Some(jmxClient.getGCInspector())))
       }
+    }
+    case MetricsAttributeRequest(ACTION_CHECK_JMX_ATTR, jmxName, jmxAttr) => {
+      log.debug(s"MetricsAttributeRequest receives (${ACTION_CHECK_JMX_ATTR}, ${jmxName}, ${jmxAttr})")
+      requestMetric(MetricsResponse(ACTION_CHECK_JMX_ATTR, Some(jmxClient.getJmxAttrValue(jmxName, jmxAttr))))
     }
   }
 
-  def offline : Receive = {
+  private def requestMetric(delegateResponse : => MetricsResponse[Any]) : Unit = {
+    try {
+      sender ! delegateResponse
+    } catch {
+      case ex: InstanceNotFoundException =>
+        log.info("JMX Instance not found : {}", ex.getMessage)
+      case ex: ConnectException =>
+        log.warning("Connection error : {}", ex.getMessage, ex);
+        context.system.eventStream.publish(
+          Notification(self.path.name, s"[${downLevel}] Cassandra node ${HostnameProvider.hostname} is DOWN",
+            s"The node ${HostnameProvider.hostname} may be down!!!",
+            downLevel,
+            downLabel,
+            HostnameProvider.hostname))
+
+        context.become(offline) // become offline. this mode try to check the metrics but call logger with debug level
+        context.parent ! NodeStatus(OFFLINE_NODE)
+      case ex: IOException =>
+        log.warning("Unexpected IO Exception : {}", ex.getMessage, ex) // do we have to become offline in this case??
+    }
+  }
+
+  private def offline : Receive = {
     case CheckNodeStatus => if (tryToProcessControls) sender() ! NodeStatus(ONLINE_NODE)
     case msg => log.debug("node is offline, message <{}> will be ignored", msg)
   }

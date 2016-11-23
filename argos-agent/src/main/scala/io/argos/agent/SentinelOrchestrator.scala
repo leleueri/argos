@@ -3,7 +3,7 @@ package io.argos.agent
 import java.util.concurrent.{Executors, TimeUnit}
 
 import akka.actor.{Actor, ActorLogging, Props}
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import io.argos.agent.bean.{CheckMetrics, CheckNodeStatus}
 import io.argos.agent.workers.MetricsProvider
 import Constants._
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import io.argos.agent.bean._
 import Messages._
-import org.apache.cassandra.service.GCInspector
+import io.argos.agent.sentinels.generic.JmxAttrSentinel
 
 
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
@@ -35,6 +35,10 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   private def startSentinel[T <: Sentinel](clazz: Class[T], confKey: String, needsMetrics: Boolean = true) : Unit = {
     if (needsMetrics) context.actorOf(Props(clazz, metricsProvider, globalConfig.getConfig(confKey)), name = confKey.split("\\.").last)
     else context.actorOf(Props(clazz, globalConfig.getConfig(confKey)), name = confKey.split("\\.").last)
+  }
+
+  private def startCustomSentinel(sentinelName: String) : Unit = {
+    startSentinel(classOf[JmxAttrSentinel], CONF_OBJECT_ENTRY_SENTINEL_CUSTOM+"."+sentinelName)
   }
 
   startSentinel(classOf[LoadAverageSentinel], CONF_OBJECT_ENTRY_SENTINEL_LOADAVG, false)
@@ -80,6 +84,9 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   startSentinel(classOf[AvailabilitySentinel], CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE)
 
   startSentinel(classOf[InternalNotificationsSentinel], CONF_OBJECT_ENTRY_SENTINEL_JMX_NOTIFICATION, false)
+
+  // start all custom sentinels
+  ConfigHelper.extractCustomSentinelsNames(globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CUSTOM)).foreach(startCustomSentinel)
 
   // initialize the frequency of metrics control
   context.system.scheduler.schedule(1 second,

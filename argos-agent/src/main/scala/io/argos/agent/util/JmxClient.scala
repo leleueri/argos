@@ -5,7 +5,7 @@ import javax.management._
 import javax.management.remote.{JMXConnector, JMXConnectorFactory, JMXServiceURL}
 
 import io.argos.agent.bean._
-import org.apache.cassandra.metrics.CassandraMetricsRegistry.JmxGaugeMBean
+import org.apache.cassandra.metrics.CassandraMetricsRegistry.{JmxCounterMBean, JmxGaugeMBean}
 import org.apache.cassandra.service.StorageServiceMBean
 
 import scala.collection.JavaConverters._
@@ -231,7 +231,11 @@ abstract class JmxClient(hostname: String, port: Int, user: Option[String] = Non
     else
       GCState(dbl(0),dbl(1),dbl(2),dbl(3),dbl(4),dbl(5),dbl(6))
   }
+
+  def getJmxAttrValue(name: String, attr: String) = JmxAttrValue(name, attr, mbeanServerCnx.getAttribute(new ObjectName(name),attr).toString.toDouble)
 }
+
+
 
 class JmxClientCassandra21(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) extends JmxClient(hostname, port, user, pwd)  {
 
@@ -265,6 +269,7 @@ class JmxClientCassandra21(hostname: String, port: Int, user: Option[String] = N
 }
 
 class JmxClientCassandraUpstream(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) extends JmxClient(hostname, port, user, pwd)
+
 
 object JmxClient {
 

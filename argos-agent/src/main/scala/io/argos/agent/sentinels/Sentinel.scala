@@ -7,11 +7,10 @@ import akka.actor.{Actor, ActorLogging}
 import com.typesafe.config.Config
 import io.argos.agent.Constants
 import io.argos.agent.Constants._
-import io.argos.agent.bean.{CheckMetrics, Notification}
+import io.argos.agent.bean.Notification
 import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean.CheckMetrics
 
-import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 

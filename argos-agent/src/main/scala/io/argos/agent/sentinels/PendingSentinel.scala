@@ -127,7 +127,7 @@ class WindowBuffer(limit : Int) {
     * @return true if the mean pending tasks of the buffer are under the threshold
     */
   def meanUnderThreshold(threshold: Int) : Boolean = {
-    if (buffer.size == limit) (buffer.foldLeft(0)((cumul, poolStats) => poolStats.pendingTasks)/limit) < threshold
+    if (buffer.size == limit) (buffer.foldLeft(0)((cumul, poolStats) => cumul + poolStats.pendingTasks)/limit) < threshold
     else true
   }
 
