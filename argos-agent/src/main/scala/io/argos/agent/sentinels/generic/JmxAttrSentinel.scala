@@ -20,6 +20,7 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Config) 
 
   private val threshold = if (conf.hasPath(CONF_THRESHOLD)) conf.getDouble(CONF_THRESHOLD) else 0.0
   private val epsilon = if (conf.hasPath(CONF_EPSILON)) conf.getLong(CONF_EPSILON) else 0.01
+  private val customMsg = if (conf.hasPath(CONF_CUSTOM_MSG)) Some(conf.getString(CONF_CUSTOM_MSG)) else None
 
   val BSIZE = Try(conf.getInt(CONF_WINDOW_SIZE)).getOrElse(1)
   val wBuffer = new WindowBuffer(BSIZE, epsilon)
@@ -49,9 +50,13 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Config) 
 
   def react(container: JmxAttrValue): Unit = {
 
-    val message =
+    val messageHeader =
       s"""Cassandra Node ${HostnameProvider.hostname} rises an alert about attribute '${jmxAttr}' on '${jmxName}'.
          |
+       """.stripMargin
+
+    val messageValue =
+      s"""
          |Last value : '${container.value}'
          |
          |Window Size : '${BSIZE}'
@@ -60,12 +65,10 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Config) 
          |
          |""".stripMargin
 
-    context.system.eventStream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(customMsg.map( cm => cm + "\n\n" + messageValue)getOrElse(messageHeader + messageValue)))
     nextReact = System.currentTimeMillis + FREQUENCY
     wBuffer.clear()
   }
-
-
 
 }
 
@@ -86,7 +89,8 @@ class WindowBuffer(limit : Int, epsilon: Double) {
     */
   def meanUnderThreshold(threshold: Double) : Boolean = {
     if (buffer.size == limit) {
-      Math.abs((buffer.foldLeft(0.0)((cumul, poolStats) => cumul + poolStats.value)/limit) - threshold) < epsilon
+      val moy: Double = buffer.foldLeft(0.0)((cumul, poolStats) => cumul + poolStats.value) / limit
+      areEquals(moy, threshold) || moy < threshold
     }
     else true
   }
@@ -96,8 +100,12 @@ class WindowBuffer(limit : Int, epsilon: Double) {
     * @return true if all pending tasks of the buffer are under the threshold
     */
   def underThreshold(threshold: Double) : Boolean = {
-    if (buffer.size == limit) buffer.exists( entry => Math.abs(entry.value - threshold) < epsilon)
+    if (buffer.size == limit) buffer.exists( entry => areEquals( entry.value, threshold) || entry.value < threshold)
     else true
+  }
+
+  private def areEquals(a: Double, b: Double) : Boolean = {
+    if (a < b) Math.abs(a - b) < epsilon else Math.abs(b - a) < epsilon
   }
 
   def clear() = buffer.clear()

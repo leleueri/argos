@@ -234,6 +234,36 @@ The "keyspace" object has two attributes :
 * name : to identify the keyspace
 * cl   : to define to expected ConsistencyLevel
 
+#### Custom Sentinels
+
+Because there are a lot of metrics available through the JMX interface, you can define your own sentinels thanks to the 'Custom sentinel'.
+To do that, you only have to create a section per sentinel into the 'argos.sentinel.custom-sentinels'. 
+The configuration key of each Config will be used as Sentinel name. Here is an example :
+
+    custom-sentinels {
+      mysentinel {
+        enabled = true
+        level= "WARNING"
+        label= "Test label"
+        objectName = "org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=HitRate"
+        objectAttr = "Value"
+        threshold=0.64
+      }
+    }
+
+Parameter | Type | Description
+--- | --- | ---
+enabled | `Boolean` | Specify if the sentinel is activated (Default: true)
+level | `String` | Level of the notification
+label | `String` | Label used into the notification *title*
+objectName | `String` | name of the JMX Object 
+objectAttr | `String` | attribute name of the JMX Object that contains the metrics value
+window-size | `Integer` | the size of the buffer (default: 1) 
+message | `String` | The message used as body for the notification
+threshold | `Double` | The maximum value authorized (default : 0.0) 
+precision | `Double` | the precision used to test if two double values are equals. (default : 0.01)
+
+
 #### Period
 
 Each sentinel may configure the 'period' between two notifications to avoid flooding the alert receiver.

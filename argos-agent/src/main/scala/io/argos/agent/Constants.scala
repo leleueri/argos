@@ -77,6 +77,7 @@ object Constants {
   val CONF_JMX_NAME = "objectName"
   val CONF_JMX_ATTR = "objectAttr"
   val CONF_EPSILON = "precision"
+  val CONF_CUSTOM_MSG = "message"
 
   val CONF_KEYSPACES = "keyspaces"
   val CONF_KEYSPACE_NAME = "name"
