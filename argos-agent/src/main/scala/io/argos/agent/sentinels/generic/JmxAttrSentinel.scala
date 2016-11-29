@@ -6,9 +6,8 @@ import io.argos.agent.Constants
 import io.argos.agent.Constants._
 import io.argos.agent.bean._
 import io.argos.agent.sentinels.Sentinel
-import io.argos.agent.util.HostnameProvider
+import io.argos.agent.util.{HostnameProvider, WindowBuffer}
 
-import scala.collection.mutable
 import scala.util.Try
 
 /**
@@ -23,10 +22,12 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Config) 
   private val customMsg = if (conf.hasPath(CONF_CUSTOM_MSG)) Some(conf.getString(CONF_CUSTOM_MSG)) else None
 
   val BSIZE = Try(conf.getInt(CONF_WINDOW_SIZE)).getOrElse(1)
-  val wBuffer = new WindowBuffer(BSIZE, epsilon)
+  val wBuffer = new WindowBuffer[JmxAttrValue](BSIZE, epsilon)
   val checkMean = Try(conf.getBoolean(CONF_WINDOW_MEAN)).getOrElse(false)
 
   // TODO create a Config Object
+
+  private def extractValue(entry: JmxAttrValue) : Double = entry.value
 
   override def processProtocolElement: Receive = {
     case CheckMetrics() => if (System.currentTimeMillis >= nextReact) {
@@ -40,9 +41,9 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Config) 
       if (log.isDebugEnabled) {
         log.debug("JmxAttrSentinel : Object=<{}>, Attribute=<{}> ==> <{}>", jmxName, jmxAttr, container.value)
       }
-      if (checkMean && !wBuffer.meanUnderThreshold(threshold)) {
+      if (checkMean && !wBuffer.meanUnderThreshold(threshold, extractValue)) {
         react(container)
-      } else if (!wBuffer.underThreshold(threshold)) {
+      } else if (!wBuffer.underThreshold(threshold, extractValue)) {
         react(container)
       }
     }
@@ -70,43 +71,4 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Config) 
     wBuffer.clear()
   }
 
-}
-
-// --------- Window buffer utility class
-// TODO merge with the one in PendingSentinel
-
-class WindowBuffer(limit : Int, epsilon: Double) {
-  val buffer = mutable.Queue[JmxAttrValue]()
-
-  def push(elt: JmxAttrValue): Unit = {
-    if (buffer.size == limit) buffer.dequeue()
-    buffer.enqueue(elt)
-  }
-
-  /**
-    * @param threshold
-    * @return true if the mean pending tasks of the buffer are under the threshold
-    */
-  def meanUnderThreshold(threshold: Double) : Boolean = {
-    if (buffer.size == limit) {
-      val moy: Double = buffer.foldLeft(0.0)((cumul, poolStats) => cumul + poolStats.value) / limit
-      areEquals(moy, threshold) || moy < threshold
-    }
-    else true
-  }
-
-  /**
-    * @param threshold
-    * @return true if all pending tasks of the buffer are under the threshold
-    */
-  def underThreshold(threshold: Double) : Boolean = {
-    if (buffer.size == limit) buffer.exists( entry => areEquals( entry.value, threshold) || entry.value < threshold)
-    else true
-  }
-
-  private def areEquals(a: Double, b: Double) : Boolean = {
-    if (a < b) Math.abs(a - b) < epsilon else Math.abs(b - a) < epsilon
-  }
-
-  def clear() = buffer.clear()
 }

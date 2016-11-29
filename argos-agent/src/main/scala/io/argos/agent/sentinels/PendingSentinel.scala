@@ -5,9 +5,8 @@ import com.typesafe.config.Config
 import io.argos.agent.Constants._
 import io.argos.agent.Messages
 import io.argos.agent.bean._
-import io.argos.agent.util.HostnameProvider
+import io.argos.agent.util.{HostnameProvider, WindowBuffer}
 
-import scala.collection.mutable
 import scala.util.Try
 
 /**
@@ -18,10 +17,12 @@ abstract class PendingSentinel (val metricsProvider: ActorRef, val conf: Config)
   def getThreadPoolStats : MetricsRequest
 
   val BSIZE = Try(conf.getInt(CONF_WINDOW_SIZE)).getOrElse(5)
-  val wBuffer = new WindowBuffer(BSIZE)
+  val wBuffer = new WindowBuffer[ThreadPoolStats](BSIZE)
   val checkMean = Try(conf.getBoolean(CONF_WINDOW_MEAN)).getOrElse(false)
 
   val threshold = conf.getInt(CONF_THRESHOLD)
+
+  private def extractPendingTasks(entry: ThreadPoolStats) : Double = entry.pendingTasks.toDouble
 
   override def processProtocolElement: Receive = {
 
@@ -37,9 +38,9 @@ abstract class PendingSentinel (val metricsProvider: ActorRef, val conf: Config)
       }
 
       if (System.currentTimeMillis >= nextReact) {
-        if (checkMean && !wBuffer.meanUnderThreshold(threshold)) {
+        if (checkMean && !wBuffer.meanUnderThreshold(threshold, extractPendingTasks)) {
           react(threadPool)
-        } else if (!wBuffer.underThreshold(threshold)) {
+        } else if (!wBuffer.underThreshold(threshold, extractPendingTasks)) {
           react(threadPool)
         }
       }
@@ -110,35 +111,4 @@ class ReadRepairPendingSentinel(override val metricsProvider : ActorRef, overrid
 
 class RequestResponsePendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_REQUEST_RESPONSE)
-}
-
-// --------- Window buffer utility class
-
-class WindowBuffer(limit : Int) {
-  val buffer = mutable.Queue[ThreadPoolStats]()
-
-  def push(elt: ThreadPoolStats): Unit = {
-    if (buffer.size == limit) buffer.dequeue()
-    buffer.enqueue(elt)
-  }
-
-  /**
-    * @param threshold
-    * @return true if the mean pending tasks of the buffer are under the threshold
-    */
-  def meanUnderThreshold(threshold: Int) : Boolean = {
-    if (buffer.size == limit) (buffer.foldLeft(0)((cumul, poolStats) => cumul + poolStats.pendingTasks)/limit) < threshold
-    else true
-  }
-
-  /**
-    * @param threshold
-    * @return true if all pending tasks of the buffer are under the threshold
-    */
-  def underThreshold(threshold: Int) : Boolean = {
-    if (buffer.size == limit) buffer.exists( _.pendingTasks < threshold)
-    else true
-  }
-
-  def clear() = buffer.clear()
 }
