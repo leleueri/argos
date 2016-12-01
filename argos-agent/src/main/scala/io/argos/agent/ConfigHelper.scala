@@ -11,9 +11,9 @@ import scala.concurrent.duration.Duration
 
 case class KeyspaceConsistency(val keyspace: String, val consistency: String)
 
-class SentinelConfiguration(val threshold: Double, val enabled: Boolean, 
-                            val level: String, val label: String, 
-                            val period: Long, val windowSize: Int,
+class SentinelConfiguration(val threshold: Double, val enabled: Boolean,
+                            val level: String, val label: String,
+                            val frequency: Long, val windowSize: Int,
                             val checkMean: Boolean, val commitLogThreshold: Double,
                             val objectName: Option[String], val objectAttr: Option[String],
                             val precision: Double, val messageHeader: Option[String],
@@ -32,7 +32,7 @@ object SentinelConfiguration {
 
     if (cfg.hasPath(CONF_JMX_NAME)) Some(cfg.getString(CONF_JMX_NAME)) else None,
     if (cfg.hasPath(CONF_JMX_NAME) && cfg.hasPath(CONF_JMX_ATTR)) Some(cfg.getString(CONF_JMX_ATTR)) else None,
-    if (cfg.hasPath(CONF_EPSILON)) cfg.getDouble(CONF_EPSILON) else 0.001,
+    if (cfg.hasPath(CONF_EPSILON)) cfg.getDouble(CONF_EPSILON) else 0.01,
     if (cfg.hasPath(CONF_CUSTOM_MSG)) Some(cfg.getString(CONF_CUSTOM_MSG)) else None,
     if (cfg.hasPath(CONF_KEYSPACES)) {
       for {

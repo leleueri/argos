@@ -3,13 +3,13 @@ import akka.actor.ActorRef
 import com.typesafe.config.Config
 import io.argos.agent.bean._
 import io.argos.agent.Constants._
-import io.argos.agent.Messages
+import io.argos.agent.{Messages, SentinelConfiguration}
 import io.argos.agent.util.HostnameProvider
 
 /**
   * Created by eric on 08/10/16.
   */
-class GCSentinel (val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
+class GCSentinel (val metricsProvider: ActorRef, val conf: SentinelConfiguration) extends Sentinel {
 
   override def processProtocolElement: Receive =  {
 
@@ -22,7 +22,7 @@ class GCSentinel (val metricsProvider: ActorRef, val conf: Config) extends Senti
         log.debug("GCSentinel : since last check gc-count=<{}>, gc-total-time-elapsed=<{}>, gc-total-bytes-reclaimed=<{}>", gcState.count,  gcState.totalRealTimeElapsed, gcState.totalBytesReclaimed)
       }
 
-      if ((gcState.gcMeanElapsedTime() >= conf.getInt(CONF_THRESHOLD) || gcState.maxRealTimeElapsed >= conf.getInt(CONF_THRESHOLD)) && System.currentTimeMillis >= nextReact) {
+      if ((gcState.gcMeanElapsedTime() >= conf.threshold || gcState.maxRealTimeElapsed >= conf.threshold) && System.currentTimeMillis >= nextReact) {
         react(gcState)
       }
     }
@@ -42,7 +42,7 @@ class GCSentinel (val metricsProvider: ActorRef, val conf: Config) extends Senti
 
     context.system.eventStream.publish(buildNotification(message))
 
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
 
     { }
   }

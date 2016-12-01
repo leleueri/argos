@@ -2,13 +2,13 @@ package io.argos.agent.sentinels
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.Messages
+import io.argos.agent.{Messages, SentinelConfiguration}
 import io.argos.agent.bean.{MetricsRequest, MetricsResponse, ThreadPoolStats}
 import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean._
 
 
-abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
+abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: SentinelConfiguration) extends Sentinel {
 
   def getThreadPoolStats : MetricsRequest
 
@@ -48,7 +48,7 @@ abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: Config) 
 
     context.system.eventStream.publish(buildNotification(message))
 
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
 
     { }
   }
@@ -56,38 +56,38 @@ abstract class BlockedSentinel(val metricsProvider: ActorRef, val conf: Config) 
 
 // --------- BlockedSentinel implementations
 
-class CompactionExecBlockedSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class CompactionExecBlockedSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_INTERNAL_STAGE, Messages.INTERNAL_STAGE_COMPACTION_EXEC)
 }
 
-class CounterMutationBlockedSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class CounterMutationBlockedSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_COUNTER_MUTATION)
 }
 
-class GossipBlockedSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class GossipBlockedSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_INTERNAL_STAGE, Messages.INTERNAL_STAGE_GOSSIP)
 }
 
-class InternalResponseBlockedSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class InternalResponseBlockedSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_INTERNAL_STAGE, Messages.INTERNAL_STAGE_INTERNAL_RESPONSE)
 }
 
-class MemtableFlusherBlockedSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class MemtableFlusherBlockedSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_INTERNAL_STAGE, Messages.INTERNAL_STAGE_MEMTABLE_FLUSHER)
 }
 
-class MutationBlockedSentinel( override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class MutationBlockedSentinel( override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_MUTATION)
 }
 
-class ReadBlockedSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class ReadBlockedSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_READ)
 }
 
-class ReadRepairBlockedSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class ReadRepairBlockedSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_READ_REPAIR)
 }
 
-class RequestResponseBlockedSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends BlockedSentinel(metricsProvider, conf) {
+class RequestResponseBlockedSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends BlockedSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_REQUEST_RESPONSE)
 }

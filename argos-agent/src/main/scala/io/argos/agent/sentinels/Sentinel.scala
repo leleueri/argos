@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.Actor.Receive
 import akka.actor.{Actor, ActorLogging}
 import com.typesafe.config.Config
-import io.argos.agent.Constants
+import io.argos.agent.{Constants, SentinelConfiguration}
 import io.argos.agent.Constants._
 import io.argos.agent.bean.Notification
 import io.argos.agent.util.HostnameProvider
@@ -21,11 +21,10 @@ import scala.util.Try
 abstract class Sentinel extends Actor with ActorLogging {
 
   var nextReact = System.currentTimeMillis
-  val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(15, TimeUnit.MINUTES).toMillis)
 
-  def conf : Config
+  def conf : SentinelConfiguration
 
-  def isEnabled = conf.getBoolean(Constants.CONF_ENABLED)
+  def isEnabled = conf.enabled
 
   override def receive: Receive = {
     case msg => if (isEnabled) {
@@ -37,9 +36,9 @@ abstract class Sentinel extends Actor with ActorLogging {
 
   def processProtocolElement: Receive
 
-  protected def level() = conf.getString(Constants.CONF_LEVEL)
+  protected def level() = conf.level
 
-  protected def label() = conf.getString(Constants.CONF_LABEL)
+  protected def label() = conf.label
 
   protected def title() = s"[${level}][${label}][CASSANDRA] Sentinel '${self.path.name}' found something on '${HostnameProvider.hostname}'"
 

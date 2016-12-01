@@ -2,7 +2,7 @@ package io.argos.agent.sentinels.generic
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.Constants
+import io.argos.agent.{Constants, SentinelConfiguration}
 import io.argos.agent.Constants._
 import io.argos.agent.bean._
 import io.argos.agent.sentinels.Sentinel
@@ -13,19 +13,17 @@ import scala.util.Try
 /**
   * Created by eric on 16/11/16.
   */
-class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
-  val jmxName = conf.getString(Constants.CONF_JMX_NAME)
-  val jmxAttr = conf.getString(Constants.CONF_JMX_ATTR)
+class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends Sentinel {
+  val jmxName = conf.objectName.get
+  val jmxAttr = conf.objectAttr.get
 
-  private val threshold = if (conf.hasPath(CONF_THRESHOLD)) conf.getDouble(CONF_THRESHOLD) else 0.0
-  private val epsilon = if (conf.hasPath(CONF_EPSILON)) conf.getLong(CONF_EPSILON) else 0.01
-  private val customMsg = if (conf.hasPath(CONF_CUSTOM_MSG)) Some(conf.getString(CONF_CUSTOM_MSG)) else None
+  private val threshold = conf.threshold
+  private val epsilon = conf.precision
+  private val customMsg = conf.messageHeader
 
-  val BSIZE = Try(conf.getInt(CONF_WINDOW_SIZE)).getOrElse(1)
+  val BSIZE = conf.windowSize
   val wBuffer = new WindowBuffer[JmxAttrValue](BSIZE, epsilon)
-  val checkMean = Try(conf.getBoolean(CONF_WINDOW_MEAN)).getOrElse(false)
-
-  // TODO create a Config Object
+  val checkMean = conf.checkMean
 
   private def extractValue(entry: JmxAttrValue) : Double = entry.value
 
@@ -67,7 +65,7 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Config) 
          |""".stripMargin
 
     context.system.eventStream.publish(buildNotification(customMsg.map( cm => cm + "\n\n" + messageValue)getOrElse(messageHeader + messageValue)))
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
     wBuffer.clear()
   }
 

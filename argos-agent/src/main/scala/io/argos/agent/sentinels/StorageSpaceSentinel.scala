@@ -4,8 +4,8 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.Constants
-import io.argos.agent.bean.{MetricsRequest, StorageSpaceInfo, MetricsResponse, ActorProtocol}
+import io.argos.agent.{Constants, SentinelConfiguration}
+import io.argos.agent.bean.{ActorProtocol, MetricsRequest, MetricsResponse, StorageSpaceInfo}
 import io.argos.agent.util.HostnameProvider
 import Constants._
 import io.argos.agent.bean._
@@ -13,15 +13,13 @@ import io.argos.agent.bean._
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
-class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
+class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends Sentinel {
 
-  private lazy val dataThreshold = conf.getDouble(CONF_THRESHOLD)
-  private lazy val commitlogThreshold = conf.getDouble(CONF_COMMIT_LOG_THRESHOLD)
+  private lazy val dataThreshold = conf.threshold
+  private lazy val commitlogThreshold = conf.commitLogThreshold
 
   private var nextDataReact = System.currentTimeMillis
   private var nextCommitlogReact = System.currentTimeMillis
-
-  override val FREQUENCY = Try(conf.getDuration(CONF_FREQUENCY, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(4, TimeUnit.HOURS).toMillis)
 
   override def processProtocolElement: Receive = {
 
@@ -56,9 +54,9 @@ class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Con
 
     info.foreach { storageInfo =>
       if (storageInfo.commitLog)
-        nextCommitlogReact = System.currentTimeMillis() + FREQUENCY
+        nextCommitlogReact = System.currentTimeMillis() + conf.frequency
       else
-        nextDataReact = System.currentTimeMillis + FREQUENCY
+        nextDataReact = System.currentTimeMillis + conf.frequency
     }
   }
 }

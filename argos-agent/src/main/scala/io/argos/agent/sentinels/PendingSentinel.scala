@@ -3,7 +3,7 @@ package io.argos.agent.sentinels
 import akka.actor.ActorRef
 import com.typesafe.config.Config
 import io.argos.agent.Constants._
-import io.argos.agent.Messages
+import io.argos.agent.{Messages, SentinelConfiguration}
 import io.argos.agent.bean._
 import io.argos.agent.util.{HostnameProvider, WindowBuffer}
 
@@ -12,15 +12,15 @@ import scala.util.Try
 /**
   * Created by eric on 27/09/16.
   */
-abstract class PendingSentinel (val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
+abstract class PendingSentinel (val metricsProvider: ActorRef, val conf: SentinelConfiguration) extends Sentinel {
 
   def getThreadPoolStats : MetricsRequest
 
-  val BSIZE = Try(conf.getInt(CONF_WINDOW_SIZE)).getOrElse(5)
+  val BSIZE = conf.windowSize
   val wBuffer = new WindowBuffer[ThreadPoolStats](BSIZE)
-  val checkMean = Try(conf.getBoolean(CONF_WINDOW_MEAN)).getOrElse(false)
+  val checkMean = conf.checkMean
 
-  val threshold = conf.getInt(CONF_THRESHOLD)
+  val threshold = conf.threshold.toInt
 
   private def extractPendingTasks(entry: ThreadPoolStats) : Double = entry.pendingTasks.toDouble
 
@@ -67,7 +67,7 @@ abstract class PendingSentinel (val metricsProvider: ActorRef, val conf: Config)
 
     context.system.eventStream.publish(buildNotification(message))
 
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
 
     wBuffer.clear()
 
@@ -77,38 +77,38 @@ abstract class PendingSentinel (val metricsProvider: ActorRef, val conf: Config)
 
 // --------- PendingSentinel implementations
 
-class CompactionExecPendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class CompactionExecPendingSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_INTERNAL_STAGE, Messages.INTERNAL_STAGE_COMPACTION_EXEC)
 }
 
-class CounterMutationPendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class CounterMutationPendingSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_COUNTER_MUTATION)
 }
 
-class GossipPendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class GossipPendingSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_INTERNAL_STAGE, Messages.INTERNAL_STAGE_GOSSIP)
 }
 
-class InternalResponsePendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class InternalResponsePendingSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_INTERNAL_STAGE, Messages.INTERNAL_STAGE_INTERNAL_RESPONSE)
 }
 
-class MemtableFlusherPendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class MemtableFlusherPendingSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_INTERNAL_STAGE, Messages.INTERNAL_STAGE_MEMTABLE_FLUSHER)
 }
 
-class MutationPendingSentinel( override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class MutationPendingSentinel( override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_MUTATION)
 }
 
-class ReadPendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class ReadPendingSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_READ)
 }
 
-class ReadRepairPendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class ReadRepairPendingSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_READ_REPAIR)
 }
 
-class RequestResponsePendingSentinel(override val metricsProvider : ActorRef, override val conf: Config) extends PendingSentinel(metricsProvider, conf) {
+class RequestResponsePendingSentinel(override val metricsProvider : ActorRef, override val conf: SentinelConfiguration) extends PendingSentinel(metricsProvider, conf) {
   override def getThreadPoolStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_STAGE, Messages.STAGE_REQUEST_RESPONSE)
 }

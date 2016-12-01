@@ -1,19 +1,18 @@
 package io.argos.agent.sentinels
 
-import java.lang.management.{ManagementFactory}
+import java.lang.management.ManagementFactory
 
 import com.typesafe.config.Config
-import io.argos.agent.Constants
+import io.argos.agent.{Constants, SentinelConfiguration}
 import io.argos.agent.bean.CheckMetrics
 import io.argos.agent.util.HostnameProvider
-
 import Constants._
 
 
-class LoadAverageSentinel(override val conf: Config) extends Sentinel {
+class LoadAverageSentinel(override val conf: SentinelConfiguration) extends Sentinel {
   private val osMBean = ManagementFactory.getOperatingSystemMXBean()
 
-  private lazy val loadAvgThreshold = conf.getDouble(CONF_THRESHOLD)
+  private lazy val loadAvgThreshold = conf.threshold
 
   override def processProtocolElement: Receive = {
     case CheckMetrics() => analyze
@@ -43,7 +42,7 @@ class LoadAverageSentinel(override val conf: Config) extends Sentinel {
 
     context.system.eventStream.publish(buildNotification(message))
 
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
 
     { }
   }

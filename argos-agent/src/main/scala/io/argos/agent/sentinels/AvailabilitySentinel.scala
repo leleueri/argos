@@ -3,25 +3,20 @@ package io.argos.agent.sentinels
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.Constants
-import io.argos.agent.bean.{AvailabilityRequirements, Availability}
-import io.argos.agent.util.{HostnameProvider, CommonLoggerFactory}
+import io.argos.agent.{Constants, SentinelConfiguration}
+import io.argos.agent.bean.{Availability, AvailabilityRequirements}
+import io.argos.agent.util.{CommonLoggerFactory, HostnameProvider}
 import Constants._
 import io.argos.agent.bean._
 
 import scala.collection.JavaConverters._
 
-class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
+class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends Sentinel {
 
   override def processProtocolElement: Receive = {
     case CheckMetrics() => if (System.currentTimeMillis >= nextReact) {
-      val availabilityCheckReq = for {
-        pair <- conf.getConfigList(CONF_KEYSPACES).asScala.toList
-        ks = pair.getString(CONF_KEYSPACE_NAME)
-        cl = pair.getString(CONF_CONSISTENCY_LEVEL)
-      } yield AvailabilityRequirements(ks, cl)
-      availabilityCheckReq.foreach{
-        req => metricsProvider ! req
+      conf.keyspaces.foreach{
+        req => metricsProvider ! AvailabilityRequirements(req.keyspace, req.consistency)
       }
     }
     case AvailabilityIssue(issues) => react(issues)
@@ -43,7 +38,7 @@ class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: Con
         context.system.eventStream.publish(buildNotification(message))
     }
 
-    if (!info.isEmpty) nextReact = System.currentTimeMillis + FREQUENCY
+    if (!info.isEmpty) nextReact = System.currentTimeMillis + conf.frequency
 
     { }
   }

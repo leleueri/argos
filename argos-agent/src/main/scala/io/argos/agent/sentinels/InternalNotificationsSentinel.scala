@@ -4,7 +4,7 @@ import java.util
 import javax.management.Notification
 
 import com.typesafe.config.Config
-import io.argos.agent.Constants
+import io.argos.agent.{Constants, SentinelConfiguration}
 import io.argos.agent.bean.{CheckMetrics, JmxNotification}
 import io.argos.agent.util.{CassandraVersion, CommonLoggerFactory, HostnameProvider}
 import Constants._
@@ -19,7 +19,7 @@ import scala.collection.JavaConverters._
   * This class add a notification listener to the JMX MBeanServer in order to follow the progress of some action (like the repair)
   *
   */
-class InternalNotificationsSentinel(override val conf: Config) extends Sentinel {
+class InternalNotificationsSentinel(override val conf: SentinelConfiguration) extends Sentinel {
 
   // TODO use the ProgressEventType enum when the v2.1 will be depreciated
   val ERROR_STATUS = 2

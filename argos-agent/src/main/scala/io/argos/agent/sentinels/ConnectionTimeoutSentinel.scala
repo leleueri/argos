@@ -2,12 +2,11 @@ package io.argos.agent.sentinels
 
 
 import akka.actor.ActorRef
-import com.typesafe.config.Config
-import io.argos.agent.Messages
+import io.argos.agent.{Messages, SentinelConfiguration}
 import io.argos.agent.bean.{MetricsRequest, MetricsResponse, _}
 import io.argos.agent.util.HostnameProvider
 
-class ConnectionTimeoutSentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
+class ConnectionTimeoutSentinel(val metricsProvider: ActorRef, val conf: SentinelConfiguration) extends Sentinel {
 
   private var previousValue = -1L
 
@@ -50,7 +49,7 @@ class ConnectionTimeoutSentinel(val metricsProvider: ActorRef, val conf: Config)
 
     context.system.eventStream.publish(buildNotification(message))
 
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
 
     { }
   }

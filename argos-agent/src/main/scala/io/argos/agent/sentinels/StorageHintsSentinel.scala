@@ -2,12 +2,13 @@ package io.argos.agent.sentinels
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.bean.{MetricsRequest, MetricsResponse, ActorProtocol}
+import io.argos.agent.SentinelConfiguration
+import io.argos.agent.bean.{ActorProtocol, MetricsRequest, MetricsResponse}
 import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean._
 
 
-class StorageHintsSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
+class StorageHintsSentinel(val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends Sentinel {
 
   private var previousValue : Array[Long] = Array(-1,-1)
 
@@ -53,6 +54,6 @@ class StorageHintsSentinel(val metricsProvider: ActorRef, override val conf: Con
        """.stripMargin
 
     context.system.eventStream.publish(buildNotification(message))
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
   }
 }

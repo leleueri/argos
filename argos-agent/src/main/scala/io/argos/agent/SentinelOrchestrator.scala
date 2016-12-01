@@ -33,8 +33,12 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   val metricsProvider = context.actorOf(Props(classOf[MetricsProvider], configJmx), name = "MetricsProvider")
 
   private def startSentinel[T <: Sentinel](clazz: Class[T], confKey: String, needsMetrics: Boolean = true) : Unit = {
-    if (needsMetrics) context.actorOf(Props(clazz, metricsProvider, globalConfig.getConfig(confKey)), name = confKey.split("\\.").last)
-    else context.actorOf(Props(clazz, globalConfig.getConfig(confKey)), name = confKey.split("\\.").last)
+    val actorName: String = confKey.split("\\.").last
+    val config = SentinelConfiguration(actorName, globalConfig.getConfig(confKey))
+    if (config.enabled) {
+      if (needsMetrics) context.actorOf(Props(clazz, metricsProvider, config), name = actorName)
+      else context.actorOf(Props(clazz, config), name = actorName)
+    }
   }
 
   private def startCustomSentinel(sentinelName: String) : Unit = {

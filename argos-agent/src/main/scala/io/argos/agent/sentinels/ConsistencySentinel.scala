@@ -3,12 +3,12 @@ package io.argos.agent.sentinels
 
 import akka.actor.ActorRef
 import com.typesafe.config.Config
-import io.argos.agent.Messages
+import io.argos.agent.{Messages, SentinelConfiguration}
 import io.argos.agent.Constants._
 import io.argos.agent.bean.{MetricsRequest, MetricsResponse, _}
 import io.argos.agent.util.HostnameProvider
 
-abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: Config) extends Sentinel {
+abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: SentinelConfiguration) extends Sentinel {
 
   private var previousValue = -1L
 
@@ -27,7 +27,7 @@ abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: Conf
       }
       if (previousValue == -1) {
         previousValue = readRepairMsg.count
-      } else if (readRepairMsg.oneMinRate > conf.getInt(CONF_THRESHOLD) && previousValue < readRepairMsg.count) {
+      } else if (readRepairMsg.oneMinRate > conf.threshold && previousValue < readRepairMsg.count) {
         react(readRepairMsg)
         previousValue = readRepairMsg.count
       }
@@ -52,7 +52,7 @@ abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: Conf
 
     context.system.eventStream.publish(buildNotification(message))
 
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
 
     { }
   }
@@ -60,10 +60,10 @@ abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: Conf
 
 // ------ ConsistencySentinel implementations
 
-class ReadRepairBackgroundSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends ConsistencySentinel (metricsProvider, conf) {
+class ReadRepairBackgroundSentinel(override val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends ConsistencySentinel (metricsProvider, conf) {
   override def getReadRepairStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_READ_REPAIR, Messages.READ_REPAIR_BACKGROUND)
 }
 
-class ReadRepairBlockingSentinel(override val metricsProvider: ActorRef, override val conf: Config) extends ConsistencySentinel (metricsProvider, conf) {
+class ReadRepairBlockingSentinel(override val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends ConsistencySentinel (metricsProvider, conf) {
   override def getReadRepairStats: MetricsRequest = MetricsRequest(ActorProtocol.ACTION_CHECK_READ_REPAIR, Messages.READ_REPAIR_BLOCKING)
 }

@@ -5,9 +5,9 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorRef
 import akka.event.EventStream
 import com.typesafe.config.Config
-import io.argos.agent.Constants
+import io.argos.agent.{Constants, SentinelConfiguration}
 import Constants._
-import io.argos.agent.bean.{MetricsResponse, MetricsRequest, ActorProtocol}
+import io.argos.agent.bean.{ActorProtocol, MetricsRequest, MetricsResponse}
 import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean._
 import io.argos.agent.util.JmxClient
@@ -15,7 +15,7 @@ import io.argos.agent.util.JmxClient
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
-class StorageExceptionSentinel(val metricsProvider: ActorRef, override val conf: Config) extends Sentinel {
+class StorageExceptionSentinel(val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends Sentinel {
 
   private var previousValue : Long = 0
 
@@ -43,6 +43,6 @@ class StorageExceptionSentinel(val metricsProvider: ActorRef, override val conf:
 
     context.system.eventStream.publish(buildNotification(message))
 
-    nextReact = System.currentTimeMillis + FREQUENCY
+    nextReact = System.currentTimeMillis + conf.frequency
   }
 }
