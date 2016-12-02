@@ -3,11 +3,9 @@ package io.argos.agent.sentinels
 import java.util
 import javax.management.Notification
 
-import com.typesafe.config.Config
 import io.argos.agent.{Constants, SentinelConfiguration}
 import io.argos.agent.bean.{CheckMetrics, JmxNotification}
 import io.argos.agent.util.{CassandraVersion, CommonLoggerFactory, HostnameProvider}
-import Constants._
 import CommonLoggerFactory._
 import org.apache.cassandra.streaming.{StreamEvent, StreamManagerMBean}
 
@@ -80,7 +78,7 @@ class InternalNotificationsSentinel(override val conf: SentinelConfiguration) ex
            |
            |""".stripMargin
 
-        context.system.eventStream.publish(buildNotification(message))
+        context.system.eventStream.publish(buildNotification(conf.messageHeader.map(h => h + " \n\n--####--\n\n" + message).getOrElse(message)))
       }
     }
   }
@@ -110,7 +108,7 @@ class InternalNotificationsSentinel(override val conf: SentinelConfiguration) ex
            |
            |""".stripMargin
 
-      context.system.eventStream.publish(buildNotification(message))
+      context.system.eventStream.publish(buildNotification(conf.messageHeader.map(h => h + " \n\n--####--\n\n" + message).getOrElse(message)))
     }
   }
 }

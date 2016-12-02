@@ -47,9 +47,9 @@ class ConnectionTimeoutSentinel(val metricsProvider: ActorRef, val conf: Sentine
         |According to the frequency of this notification, a repair may be useful...
       """.stripMargin
 
-    context.system.eventStream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(conf.messageHeader.map(h => h + " \n\n--####--\n\n" + message).getOrElse(message)))
 
-    nextReact = System.currentTimeMillis + conf.frequency
+    updateNextReact()
 
     { }
   }

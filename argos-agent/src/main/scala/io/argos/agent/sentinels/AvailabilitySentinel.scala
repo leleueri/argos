@@ -2,14 +2,10 @@ package io.argos.agent.sentinels
 
 
 import akka.actor.ActorRef
-import com.typesafe.config.Config
 import io.argos.agent.{Constants, SentinelConfiguration}
 import io.argos.agent.bean.{Availability, AvailabilityRequirements}
-import io.argos.agent.util.{CommonLoggerFactory, HostnameProvider}
-import Constants._
+import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean._
-
-import scala.collection.JavaConverters._
 
 class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends Sentinel {
 
@@ -35,10 +31,12 @@ class AvailabilitySentinel(val metricsProvider: ActorRef, override val conf: Sen
                   |Unreachable replicas : ${availabilityInfo.unreachableEndpoints.mkString("['", "', '", "']")}
                 """.stripMargin
 
-        context.system.eventStream.publish(buildNotification(message))
+        context.system.eventStream.publish(buildNotification(conf.messageHeader.map(h => h + " \n\n--####--\n\n" + message).getOrElse(message)))
     }
 
-    if (!info.isEmpty) nextReact = System.currentTimeMillis + conf.frequency
+    if (!info.isEmpty){
+      updateNextReact()
+    }
 
     { }
   }

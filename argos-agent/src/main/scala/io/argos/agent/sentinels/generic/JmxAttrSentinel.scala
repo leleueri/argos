@@ -39,9 +39,8 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Sentinel
       if (log.isDebugEnabled) {
         log.debug("JmxAttrSentinel : Object=<{}>, Attribute=<{}> ==> <{}>", jmxName, jmxAttr, container.value)
       }
-      if (checkMean && !wBuffer.meanUnderThreshold(threshold, extractValue)) {
-        react(container)
-      } else if (!wBuffer.underThreshold(threshold, extractValue)) {
+      if ((checkMean && !wBuffer.meanUnderThreshold(threshold, extractValue))
+        || (!checkMean && !wBuffer.underThreshold(threshold, extractValue))) {
         react(container)
       }
     }
@@ -56,16 +55,19 @@ class JmxAttrSentinel(val metricsProvider: ActorRef, override val conf: Sentinel
 
     val messageValue =
       s"""
+         |--####--
+         |
          |Last value : '${container.value}'
          |
          |Window Size : '${BSIZE}'
          |Configured Threshold : '${threshold}'
          |Threshold On Mean : '${checkMean}'
          |
+         |--####--
          |""".stripMargin
 
-    context.system.eventStream.publish(buildNotification(customMsg.map( cm => cm + "\n\n" + messageValue)getOrElse(messageHeader + messageValue)))
-    nextReact = System.currentTimeMillis + conf.frequency
+    context.system.eventStream.publish(buildNotification(customMsg.map( cm => cm + "\n\n" + messageValue).getOrElse(messageHeader + messageValue)))
+    updateNextReact()
     wBuffer.clear()
   }
 

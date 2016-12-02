@@ -1,17 +1,11 @@
 package io.argos.agent.sentinels
 
-import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
-import com.typesafe.config.Config
-import io.argos.agent.{Constants, SentinelConfiguration}
+import io.argos.agent.SentinelConfiguration
 import io.argos.agent.bean.{ActorProtocol, MetricsRequest, MetricsResponse, StorageSpaceInfo}
 import io.argos.agent.util.HostnameProvider
-import Constants._
 import io.argos.agent.bean._
-
-import scala.concurrent.duration.FiniteDuration
-import scala.util.Try
 
 class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: SentinelConfiguration) extends Sentinel {
 
@@ -35,10 +29,12 @@ class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Sen
   def react(info: Array[StorageSpaceInfo]): Unit = {
     val messageHeader =
       s"""Cassandra Node ${HostnameProvider.hostname} needs additional disk space.
+         |
          |Check the used space.
+         |
          |Here is some tips :
          |- Some Snapshots may have to be removed (nodetool clearsnapshot)
-         |- If you add a node recently, you may have to 'clean' some partition (nodetool cleanup)
+         |- If you added a node recently, you may have to 'clean' some partition (nodetool cleanup)
          |- You may have to increase the disk space or add some nodes.""".stripMargin
 
     val message = info.foldLeft(messageHeader)((acc: String, currentInfo : StorageSpaceInfo) => acc +
@@ -50,7 +46,7 @@ class StorageSpaceSentinel(val metricsProvider: ActorRef, override val conf: Sen
          | Total Space     : ${currentInfo.totalSpace/(1024*1024)} MB
        """.stripMargin)
 
-    context.system.eventStream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(conf.messageHeader.map(h => h + " \n\n--####--\n\n" + message).getOrElse(message)))
 
     info.foreach { storageInfo =>
       if (storageInfo.commitLog)

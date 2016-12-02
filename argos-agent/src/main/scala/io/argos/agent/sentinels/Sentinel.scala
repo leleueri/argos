@@ -1,18 +1,10 @@
 package io.argos.agent.sentinels
 
-import java.util.concurrent.TimeUnit
-
-import akka.actor.Actor.Receive
 import akka.actor.{Actor, ActorLogging}
-import com.typesafe.config.Config
-import io.argos.agent.{Constants, SentinelConfiguration}
-import io.argos.agent.Constants._
+import io.argos.agent.SentinelConfiguration
 import io.argos.agent.bean.Notification
 import io.argos.agent.util.HostnameProvider
 import io.argos.agent.bean.CheckMetrics
-
-import scala.concurrent.duration.FiniteDuration
-import scala.util.Try
 
 /**
  * The sentinel analyzes information provided by the JMX interface of the Cassandra Node.
@@ -43,6 +35,10 @@ abstract class Sentinel extends Actor with ActorLogging {
   protected def title() = s"[${level}][${label}][CASSANDRA] Sentinel '${self.path.name}' found something on '${HostnameProvider.hostname}'"
 
   protected def buildNotification(msg: String) : Notification = Notification(self.path.name, title, msg, level, label, HostnameProvider.hostname)
+
+  protected def updateNextReact() : Unit = {
+    nextReact =  System.currentTimeMillis + conf.frequency
+  }
 
   @throws[Exception](classOf[Exception])
   override def preStart(): Unit = {

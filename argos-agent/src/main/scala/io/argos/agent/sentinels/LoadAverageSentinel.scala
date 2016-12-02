@@ -2,17 +2,16 @@ package io.argos.agent.sentinels
 
 import java.lang.management.ManagementFactory
 
-import com.typesafe.config.Config
-import io.argos.agent.{Constants, SentinelConfiguration}
+import io.argos.agent.SentinelConfiguration
 import io.argos.agent.bean.CheckMetrics
-import io.argos.agent.util.HostnameProvider
-import Constants._
+import io.argos.agent.util.{HostnameProvider, WindowBuffer}
 
 
 class LoadAverageSentinel(override val conf: SentinelConfiguration) extends Sentinel {
   private val osMBean = ManagementFactory.getOperatingSystemMXBean()
 
-  private lazy val loadAvgThreshold = conf.threshold
+  private lazy val threshold = conf.threshold
+  val wBuffer = new WindowBuffer[Double](conf.windowSize)
 
   override def processProtocolElement: Receive = {
     case CheckMetrics() => analyze
@@ -21,28 +20,32 @@ class LoadAverageSentinel(override val conf: SentinelConfiguration) extends Sent
   def analyze() : Unit = {
     if (System.currentTimeMillis >= nextReact) {
       val loadAvg = osMBean.getSystemLoadAverage
+      wBuffer.push(loadAvg)
+
       if (log.isDebugEnabled) {
-        log.debug("LoadAvg=<{}>, threshold=<{}>", loadAvg.toString, loadAvgThreshold.toString)
+        log.debug("LoadAvg=<{}>, threshold=<{}>", loadAvg.toString, threshold.toString)
       }
-      if (loadAvg > loadAvgThreshold) {
-        react(loadAvg, loadAvgThreshold)
+
+      if ( (conf.checkMean && !wBuffer.meanUnderThreshold(threshold, (x) => x))
+        || (!conf.checkMean && !wBuffer.underThreshold(threshold, (x) => x))) {
+        react(loadAvg)
       }
     }
   }
 
-  def react(loadAvg: Double, threshold: Double): Unit = {
+  def react(loadAvg: Double): Unit = {
+
     val message =
       s"""Cassandra Node ${HostnameProvider.hostname} is overloaded.
-                                                       |
-                                                       |Current loadAvg : ${loadAvg}
-          |Threshold : ${loadAvgThreshold}
-          |
-          |Something wrong may append on this node...
-      """.stripMargin
+         |
+         |Current loadAvg : ${loadAvg}
+         |Threshold : ${threshold}
+         |
+         |Something wrong may append on this node...""".stripMargin
 
-    context.system.eventStream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(conf.messageHeader.map(h => h + " \n\n--####--\n\n" + message).getOrElse(message)))
 
-    nextReact = System.currentTimeMillis + conf.frequency
+    updateNextReact()
 
     { }
   }

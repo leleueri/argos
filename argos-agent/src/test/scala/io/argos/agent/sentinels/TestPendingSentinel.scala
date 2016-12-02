@@ -5,7 +5,7 @@ import akka.testkit.{TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
 import io.argos.agent.Constants._
 import io.argos.agent.bean._
-import io.argos.agent.{Constants, Messages}
+import io.argos.agent.{Constants, Messages, SentinelConfiguration}
 import org.scalatest._
 
 /**
@@ -24,14 +24,14 @@ class TestPendingSentinel extends TestKit(ActorSystem("TestPendingSentinel")) wi
     notificationProbe.ref,
     classOf[Notification])
 
-  val pendingCounterActor = system.actorOf(Props(classOf[CounterMutationPendingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_COUNTER_MUTATION)))
-  val pendingGossipActor = system.actorOf(Props(classOf[GossipPendingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_GOSSIP)))
-  val pendingMutationActor = system.actorOf(Props(classOf[MutationPendingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_MUTATION)))
-  val pendingReadActor = system.actorOf(Props(classOf[ReadPendingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_READ)))
-  val pendingReadRepairActor = system.actorOf(Props(classOf[ReadRepairPendingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_READ_REPAIR)))
-  val pendingInternalActor = system.actorOf(Props(classOf[InternalResponsePendingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_INTERNAL)))
-  val pendingMemtableActor = system.actorOf(Props(classOf[MemtableFlusherPendingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_MEMTABLE)))
-  val pendingCompatcActor = system.actorOf(Props(classOf[CompactionExecPendingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_COMPACTION)))
+  val pendingCounterActor = system.actorOf(Props(classOf[CounterMutationPendingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_COUNTER_MUTATION))))
+  val pendingGossipActor = system.actorOf(Props(classOf[GossipPendingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_GOSSIP))))
+  val pendingMutationActor = system.actorOf(Props(classOf[MutationPendingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_MUTATION))))
+  val pendingReadActor = system.actorOf(Props(classOf[ReadPendingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_READ))))
+  val pendingReadRepairActor = system.actorOf(Props(classOf[ReadRepairPendingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_READ_REPAIR))))
+  val pendingInternalActor = system.actorOf(Props(classOf[InternalResponsePendingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_INTERNAL))))
+  val pendingMemtableActor = system.actorOf(Props(classOf[MemtableFlusherPendingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_MEMTABLE))))
+  val pendingCompatcActor = system.actorOf(Props(classOf[CompactionExecPendingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_PENDING_STAGE_COMPACTION))))
 
   override def afterAll() {
     system.terminate()

@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import io.argos.agent.Constants._
 import io.argos.agent.bean.ActorProtocol._
 import io.argos.agent.bean._
-import io.argos.agent.{Constants, Messages}
+import io.argos.agent.{Constants, Messages, SentinelConfiguration}
 import org.scalatest._
 
 /**
@@ -25,8 +25,8 @@ class TestConsistencySentinel extends TestKit(ActorSystem("TestConsistencySentin
     notificationProbe.ref,
     classOf[Notification])
 
-  val rrBlockingActor = system.actorOf(Props(classOf[ReadRepairBlockingSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BLOCKING)))
-  val rrBackgroundActor = system.actorOf(Props(classOf[ReadRepairBackgroundSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BACKGROUND)))
+  val rrBlockingActor = system.actorOf(Props(classOf[ReadRepairBlockingSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BLOCKING))))
+  val rrBackgroundActor = system.actorOf(Props(classOf[ReadRepairBackgroundSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BACKGROUND))))
 
   override def afterAll() {
     system.terminate()

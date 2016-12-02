@@ -34,10 +34,16 @@ class SentinelOrchestrator extends Actor with ActorLogging {
 
   private def startSentinel[T <: Sentinel](clazz: Class[T], confKey: String, needsMetrics: Boolean = true) : Unit = {
     val actorName: String = confKey.split("\\.").last
-    val config = SentinelConfiguration(actorName, globalConfig.getConfig(confKey))
-    if (config.enabled) {
-      if (needsMetrics) context.actorOf(Props(clazz, metricsProvider, config), name = actorName)
-      else context.actorOf(Props(clazz, config), name = actorName)
+    if (globalConfig.hasPath(confKey)) {
+      val config = SentinelConfiguration(actorName, globalConfig.getConfig(confKey))
+      if (config.enabled) {
+        if (needsMetrics) context.actorOf(Props(clazz, metricsProvider, config), name = actorName)
+        else context.actorOf(Props(clazz, config), name = actorName)
+      } else {
+        log.info("Actor '{}' is disabled", confKey, actorName)
+      }
+    } else {
+      log.info("Configuration key '{}' is missing, ignore actor '{}'", confKey, actorName)
     }
   }
 

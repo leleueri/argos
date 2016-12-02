@@ -3,7 +3,7 @@ package io.argos.agent.sentinels
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
-import io.argos.agent.{Messages, Constants}
+import io.argos.agent.{Constants, Messages, SentinelConfiguration}
 import io.argos.agent.bean._
 import Constants._
 import ActorProtocol._
@@ -26,7 +26,7 @@ class TestStorageExceptionSentinel extends TestKit(ActorSystem("TestStorageExcep
     notificationProbe.ref,
     classOf[Notification])
 
-  val storageExceptionActor = system.actorOf(Props(classOf[StorageExceptionSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_EXCEPTION)))
+  val storageExceptionActor = system.actorOf(Props(classOf[StorageExceptionSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_EXCEPTION))))
 
   override def afterAll() {
     system.terminate()

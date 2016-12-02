@@ -1,9 +1,8 @@
 package io.argos.agent.sentinels
+
 import akka.actor.ActorRef
-import com.typesafe.config.Config
 import io.argos.agent.bean._
-import io.argos.agent.Constants._
-import io.argos.agent.{Messages, SentinelConfiguration}
+import io.argos.agent.SentinelConfiguration
 import io.argos.agent.util.HostnameProvider
 
 /**
@@ -40,9 +39,9 @@ class GCSentinel (val metricsProvider: ActorRef, val conf: SentinelConfiguration
          |
        """.stripMargin
 
-    context.system.eventStream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(conf.messageHeader.map(h => h + " \n\n--####--\n\n" + message).getOrElse(message)))
 
-    nextReact = System.currentTimeMillis + conf.frequency
+    updateNextReact()
 
     { }
   }

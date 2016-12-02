@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
 import io.argos.agent.Constants._
-import io.argos.agent.Messages
+import io.argos.agent.{Messages, SentinelConfiguration}
 import io.argos.agent.bean.ActorProtocol._
 import io.argos.agent.bean._
 import org.scalatest._
@@ -25,7 +25,7 @@ class TestGCSentinel extends TestKit(ActorSystem("TestGCSentinel")) with FlatSpe
     notificationProbe.ref,
     classOf[Notification])
 
-  val gcInspectorActor = system.actorOf(Props(classOf[GCSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_GC)))
+  val gcInspectorActor = system.actorOf(Props(classOf[GCSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_GC))))
 
   override def afterAll() {
     system.terminate()

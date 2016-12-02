@@ -1,9 +1,9 @@
 package io.argos.agent.sentinels
 
-import akka.actor.{ActorRef, Props, ActorSystem}
-import akka.testkit.{ImplicitSender, TestProbe, TestKit}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
-import io.argos.agent.{Messages, Constants}
+import io.argos.agent.{Constants, Messages, SentinelConfiguration}
 import io.argos.agent.bean._
 import Constants._
 import ActorProtocol._
@@ -27,13 +27,13 @@ class TestDroppedSentinel extends TestKit(ActorSystem("TestDroppedSentinel")) wi
     notificationProbe.ref,
     classOf[Notification])
 
-  val droppedCounterActor = system.actorOf(Props(classOf[DroppedCounterSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER)))
-  val droppedMutationActor = system.actorOf(Props(classOf[DroppedMutationSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION)))
-  val droppedReadActor = system.actorOf(Props(classOf[DroppedReadSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ)))
-  val droppedReadRepairActor = system.actorOf(Props(classOf[DroppedReadRepairSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ_REPAIR)))
-  val droppedPageActor = system.actorOf(Props(classOf[DroppedPageRangeSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_PAGE)))
-  val droppedRangeActor = system.actorOf(Props(classOf[DroppedRangeSliceSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE)))
-  val droppedReqRespActor = system.actorOf(Props(classOf[DroppedRequestResponseSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP)))
+  val droppedCounterActor = system.actorOf(Props(classOf[DroppedCounterSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_COUNTER))))
+  val droppedMutationActor = system.actorOf(Props(classOf[DroppedMutationSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_MUTATION))))
+  val droppedReadActor = system.actorOf(Props(classOf[DroppedReadSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ))))
+  val droppedReadRepairActor = system.actorOf(Props(classOf[DroppedReadRepairSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_READ_REPAIR))))
+  val droppedPageActor = system.actorOf(Props(classOf[DroppedPageRangeSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_PAGE))))
+  val droppedRangeActor = system.actorOf(Props(classOf[DroppedRangeSliceSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_RANGE))))
+  val droppedReqRespActor = system.actorOf(Props(classOf[DroppedRequestResponseSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_DROPPED_REQ_RESP))))
 
   override def afterAll() {
     system.terminate()

@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
 import io.argos.agent.Constants._
-import io.argos.agent.Messages
+import io.argos.agent.{Messages, SentinelConfiguration}
 import io.argos.agent.bean.ActorProtocol._
 import io.argos.agent.bean._
 import org.scalatest._
@@ -25,7 +25,7 @@ class TestTimeoutSentinel extends TestKit(ActorSystem("TestTimeoutSentinel")) wi
     notificationProbe.ref,
     classOf[Notification])
 
-  val cnxTimeoutActor = system.actorOf(Props(classOf[ConnectionTimeoutSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONNECTION_TIMEOUTS)))
+  val cnxTimeoutActor = system.actorOf(Props(classOf[ConnectionTimeoutSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CONNECTION_TIMEOUTS))))
 
   override def afterAll() {
     system.terminate()

@@ -3,7 +3,7 @@ package io.argos.agent.sentinels
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
-import io.argos.agent.Constants
+import io.argos.agent.{Constants, SentinelConfiguration}
 import io.argos.agent.bean._
 import Constants._
 import ActorProtocol._
@@ -26,7 +26,7 @@ class TestStorageHintsSentinel extends TestKit(ActorSystem("TestStorageHintsSent
     notificationProbe.ref,
     classOf[Notification])
 
-  val testableActor = system.actorOf(Props(classOf[StorageHintsSentinel], metricsProviderProbe.ref, globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_HINTS)))
+  val testableActor = system.actorOf(Props(classOf[StorageHintsSentinel], metricsProviderProbe.ref, SentinelConfiguration("test", globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_STORAGE_HINTS))))
 
   override def afterAll() {
     system.terminate()

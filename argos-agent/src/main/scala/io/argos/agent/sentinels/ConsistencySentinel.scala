@@ -2,9 +2,7 @@ package io.argos.agent.sentinels
 
 
 import akka.actor.ActorRef
-import com.typesafe.config.Config
 import io.argos.agent.{Messages, SentinelConfiguration}
-import io.argos.agent.Constants._
 import io.argos.agent.bean.{MetricsRequest, MetricsResponse, _}
 import io.argos.agent.util.HostnameProvider
 
@@ -50,9 +48,9 @@ abstract class ConsistencySentinel(val metricsProvider: ActorRef, val conf: Sent
         |According to the frequency of this notification, a repair may be useful...
       """.stripMargin
 
-    context.system.eventStream.publish(buildNotification(message))
+    context.system.eventStream.publish(buildNotification(conf.messageHeader.map(h => h + " \n\n--####--\n\n" + message).getOrElse(message)))
 
-    nextReact = System.currentTimeMillis + conf.frequency
+    updateNextReact()
 
     { }
   }
