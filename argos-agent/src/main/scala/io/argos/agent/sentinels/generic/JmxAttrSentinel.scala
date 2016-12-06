@@ -1,14 +1,11 @@
 package io.argos.agent.sentinels.generic
 
 import akka.actor.ActorRef
-import com.typesafe.config.Config
-import io.argos.agent.{Constants, SentinelConfiguration}
-import io.argos.agent.Constants._
+import io.argos.agent.SentinelConfiguration
 import io.argos.agent.bean._
 import io.argos.agent.sentinels.Sentinel
 import io.argos.agent.util.{HostnameProvider, WindowBuffer}
 
-import scala.util.Try
 
 /**
   * Created by eric on 16/11/16.
