@@ -1,9 +1,10 @@
 package io.argos.agent
 
-import akka.actor.{Props, ActorSystem}
+import akka.actor.{ActorSystem, Props}
 import Constants._
 import com.typesafe.config.ConfigFactory
 import io.argos.agent.notifiers.NotifierProvider
+import io.argos.agent.orchestrators.SentinelOrchestrator
 import io.argos.agent.util.CommonLoggerFactory
 
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
@@ -15,6 +16,8 @@ import collection.JavaConversions._
 object Launcher extends App {
 
   val system = ActorSystem(ACTOR_SYSTEM)
+
+  // TODO manage process parameter to start Sentinel or/and Agent orchestrator ... ???
 
   // Start all Notifiers
   ConfigFactory.load().getConfig(CONF_OBJECT_ENTRY_NOTIFIERS).entrySet().toList.filter(_.getKey.matches("[^\\.]+\\." + CONF_PROVIDER_CLASS_KEY)).foreach(
@@ -34,5 +37,8 @@ object Launcher extends App {
 
   // start the Sentinel Orchestrator (this actor launches MetricsProviders, sentinels... and schedule the sentinel processing)
   system.actorOf(Props[SentinelOrchestrator], name = "SentinelOrchestrator")
+
+  // start the agent orchestrator only if the
+  system.actorOf(Props[SentinelOrchestrator], name = "AgentOrchestrator")
 
 }
