@@ -4,21 +4,21 @@ name := "argos-agent"
 
 organization := "io.argos"
 
-version := "1.0"
+version := "1.1-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.12.1"
 
-libraryDependencies += "org.apache.cassandra" % "cassandra-all" % "3.0.6" % "provided"
+libraryDependencies += "org.apache.cassandra" % "cassandra-all" % "3.0.10" % "provided"
 
 libraryDependencies += "javax.mail" % "mail" % "1.4.7"
 
-libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.4.7"
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.4.16"
 
-//libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.4.7"
+//libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.4.16"
 
-libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.4.7" % "test"
+libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.4.16" % "test"
 
-libraryDependencies +=  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+libraryDependencies +=  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 
 assemblyMergeStrategy in assembly := {
   case PathList("application.conf") => MergeStrategy.discard
