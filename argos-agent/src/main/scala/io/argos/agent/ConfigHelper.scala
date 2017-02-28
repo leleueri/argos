@@ -4,14 +4,15 @@ import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.Config
 import Constants._
-import scala.collection.JavaConverters._
+import io.argos.agent.util.HostnameProvider
 
+import scala.collection.JavaConverters._
 import collection.JavaConversions._
 import scala.concurrent.duration.Duration
 
 case class KeyspaceConsistency(val keyspace: String, val consistency: String)
 
-class SentinelConfiguration(val threshold: Double, val enabled: Boolean,
+case class SentinelConfiguration(val threshold: Double, val enabled: Boolean,
                             val level: String, val label: String,
                             val frequency: Long, val windowSize: Int,
                             val checkMean: Boolean, val commitLogThreshold: Double,
@@ -44,7 +45,25 @@ object SentinelConfiguration {
   )
 }
 
+case class AgentGatewayConfig(enable: Boolean, name: String, orchestratorHost: String, orchestratorPort: Int)
+
+case class AgentOrchestratorConfig(enable: Boolean)
+
 object ConfigHelper {
+
+  def getAgentOrchestratorConfig(config: Config) : AgentOrchestratorConfig = {
+    new AgentOrchestratorConfig(
+      if (config.hasPath(CONF_ORCHESTRATOR_ENABLE)) config.getBoolean(CONF_ORCHESTRATOR_ENABLE) else false
+    )
+  }
+
+  def getAgentGatewayConfig(config: Config) : AgentGatewayConfig = {
+    new AgentGatewayConfig(
+      if (config.hasPath("argos.gateway.enable")) config.getBoolean("argos.gateway.enable") else false,
+      if (config.hasPath("argos.gateway.name")) config.getString("argos.gateway.name") else HostnameProvider.hostname,
+      if (config.hasPath("argos.gateway.orchestrator-host")) config.getString("argos.gateway.orchestrator-host") else "127.0.0.1",
+      if (config.hasPath("argos.gateway.orchestrator-port")) config.getInt("argos.gateway.orchestrator-port") else 7900)
+  }
 
   def extractCustomSentinelsNames (customConfig: Config) : List[String] = {
     customConfig.entrySet()
