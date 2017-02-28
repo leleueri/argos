@@ -70,6 +70,6 @@ object ConfigHelper {
       globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CUSTOM).entrySet()
         .toList
         .map(entry => entry.getKey.split("\\.")(0)).distinct
-    }
+    } else List()
   }
 }
