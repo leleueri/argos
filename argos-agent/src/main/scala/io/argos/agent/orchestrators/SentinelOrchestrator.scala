@@ -95,7 +95,7 @@ class SentinelOrchestrator extends Actor with ActorLogging {
   startSentinel(classOf[InternalNotificationsSentinel], CONF_OBJECT_ENTRY_SENTINEL_JMX_NOTIFICATION, false)
 
   // start all custom sentinels
-  ConfigHelper.extractCustomSentinelsNames(globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CUSTOM)).foreach(startCustomSentinel)
+  ConfigHelper.extractCustomSentinelsNames(globalConfig).foreach(startCustomSentinel)
 
   // initialize the frequency of metrics control
   context.system.scheduler.schedule(1 second,

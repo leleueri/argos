@@ -65,9 +65,11 @@ object ConfigHelper {
       if (config.hasPath("argos.gateway.orchestrator-port")) config.getInt("argos.gateway.orchestrator-port") else 7900)
   }
 
-  def extractCustomSentinelsNames (customConfig: Config) : List[String] = {
-    customConfig.entrySet()
-      .toList
-      .map(entry => entry.getKey.split("\\.")(0)).distinct
+  def extractCustomSentinelsNames (globalConfig: Config) : List[String] = {
+    if (globalConfig.hasPath(CONF_OBJECT_ENTRY_SENTINEL_CUSTOM)) {
+      globalConfig.getConfig(CONF_OBJECT_ENTRY_SENTINEL_CUSTOM).entrySet()
+        .toList
+        .map(entry => entry.getKey.split("\\.")(0)).distinct
+    }
   }
 }
