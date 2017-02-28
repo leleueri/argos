@@ -1,23 +1,22 @@
-package io.argos.agent
+package io.argos.agent.orchestrators
 
 import java.util.concurrent.{Executors, TimeUnit}
 
 import akka.actor.{Actor, ActorLogging, Props}
-import com.typesafe.config.{Config, ConfigFactory}
-import io.argos.agent.bean.{CheckMetrics, CheckNodeStatus}
-import io.argos.agent.workers.MetricsProvider
-import Constants._
+import com.typesafe.config.ConfigFactory
+import io.argos.agent.Constants._
+import io.argos.agent.Messages._
+import io.argos.agent.bean.{CheckMetrics, CheckNodeStatus, _}
 import io.argos.agent.sentinels._
+import io.argos.agent.sentinels.generic.JmxAttrSentinel
+import io.argos.agent.workers.MetricsProvider
+import io.argos.agent.{ConfigHelper, Messages, SentinelConfiguration}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import io.argos.agent.bean._
-import Messages._
-import io.argos.agent.sentinels.generic.JmxAttrSentinel
 
 
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
-import collection.JavaConversions._
 
 /**
  * The "SentinelOrchestrator" actor schedule the sentinels that analyze information provided by the JMX interface of Cassandra.

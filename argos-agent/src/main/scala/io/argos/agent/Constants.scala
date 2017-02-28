@@ -91,6 +91,9 @@ object Constants {
   val CONF_MAIL_NOTIFIER_SMTP_PORT = "smtp-port"
   val CONF_MAIL_NOTIFIER_RECIPIENTS = "recipients"
   val CONF_MAIL_NOTIFIER_FROM = "from"
+
+  val CONF_ORCHESTRATOR = "argos.orchestrator"
+  val CONF_ORCHESTRATOR_ENABLE = CONF_ORCHESTRATOR + ".enable"
 }
 
 object Messages {
