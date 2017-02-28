@@ -17,45 +17,61 @@ import collection.JavaConversions._
 object Launcher extends App {
 
   val system = ActorSystem(ACTOR_SYSTEM)
+  val cfg: Config = ConfigFactory.load()
 
-  // Start all Notifiers
-  private val cfg: Config = ConfigFactory.load()
-  cfg.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS).entrySet().toList.filter(_.getKey.matches("[^\\.]+\\." + CONF_PROVIDER_CLASS_KEY)).foreach(
-    confValue => {
-      try {
-        val clazz: String = confValue.getValue.unwrapped().asInstanceOf[String]
-        CommonLoggerFactory.commonLogger.info(this, "Initialize '{}' notifier", clazz)
-        val providerClass: Any = Class.forName(clazz).newInstance()
-        system.actorOf(providerClass.asInstanceOf[NotifierProvider].props, confValue.getKey.substring(0, confValue.getKey.indexOf('.')).capitalize+"Notifier")
-      } catch {
-        case e: Exception =>
-          CommonLoggerFactory.commonLogger.error(this, e, "Actor system will terminate, unable to initialize the '{}' notifier : '{}'.", confValue.getKey, e.getMessage)
-          system.terminate()
+  startAllNotifiers
+  startSentinelOrchestrator
+  startAgentOrchestrator
+  startAgentGateway
+
+  def startAllNotifiers = {
+    cfg.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS).entrySet().toList.filter(_.getKey.matches("[^\\.]+\\." + CONF_PROVIDER_CLASS_KEY)).foreach(
+      confValue => {
+        try {
+          val clazz: String = confValue.getValue.unwrapped().asInstanceOf[String]
+          CommonLoggerFactory.commonLogger.info(this, "Initialize '{}' notifier", clazz)
+          val providerClass: Any = Class.forName(clazz).newInstance()
+          system.actorOf(providerClass.asInstanceOf[NotifierProvider].props, confValue.getKey.substring(0, confValue.getKey.indexOf('.')).capitalize + "Notifier")
+        } catch {
+          case e: Exception =>
+            CommonLoggerFactory.commonLogger.error(this, e, "Actor system will terminate, unable to initialize the '{}' notifier : '{}'.", confValue.getKey, e.getMessage)
+            system.terminate()
+        }
       }
-    }
-  )
-
-  // start the Sentinel Orchestrator (this actor launches MetricsProviders, sentinels... and schedule the sentinel processing)
-  // TODO make SentinelOrchestrator optional ???
-  CommonLoggerFactory.commonLogger.info(this, "Start Sentinel Orchestrator")
-  system.actorOf(Props[SentinelOrchestrator], name = "SentinelOrchestrator")
-
-  // start the agent orchestrator only if useful
-  val orchestratorCfg = ConfigHelper.getAgentOrchestratorConfig(cfg)
-  if (orchestratorCfg.enable) {
-    CommonLoggerFactory.commonLogger.info(this, "Agent Orchestrator enabled")
-    system.actorOf(Props(classOf[AgentOrchestrator], orchestratorCfg), name = "AgentOrchestrator")
-  } else {
-    CommonLoggerFactory.commonLogger.info(this, "Agent Orchestrator disabled")
+    )
   }
 
-  // start the agent gateway
-  val agentCfg = ConfigHelper.getAgentGatewayConfig(cfg)
-  if (agentCfg.enable) {
-    CommonLoggerFactory.commonLogger.info(this, "Agent Gateway enabled")
-    system.actorOf(Props(classOf[AgentGateway], agentCfg), name = "AgentGateway")
-  } else {
-    CommonLoggerFactory.commonLogger.info(this, "Agent Gateway disabled")
+  def startSentinelOrchestrator = {
+    if (cfg.hasPath(CONF_OBJECT_ENTRY_SENTINEL) && cfg.hasPath(CONF_OBJECT_ENTRY_SENTINEL_ENABLE) && cfg.getBoolean(CONF_OBJECT_ENTRY_SENTINEL_ENABLE)) {
+      system.actorOf(Props[SentinelOrchestrator], name = "SentinelOrchestrator")
+      CommonLoggerFactory.commonLogger.info(this, "Start Sentinel Orchestrator")
+    }
+
+    {}
+  }
+
+  def startAgentOrchestrator = {
+    val orchestratorCfg = ConfigHelper.getAgentOrchestratorConfig(cfg)
+    if (orchestratorCfg.enable) {
+      CommonLoggerFactory.commonLogger.info(this, "Agent Orchestrator enabled")
+      system.actorOf(Props(classOf[AgentOrchestrator], orchestratorCfg), name = "AgentOrchestrator")
+    } else {
+      CommonLoggerFactory.commonLogger.info(this, "Agent Orchestrator disabled")
+    }
+
+    {}
+  }
+
+  def startAgentGateway = {
+    val agentCfg = ConfigHelper.getAgentGatewayConfig(cfg)
+    if (agentCfg.enable) {
+      CommonLoggerFactory.commonLogger.info(this, "Agent Gateway enabled")
+      system.actorOf(Props(classOf[AgentGateway], agentCfg), name = "AgentGateway")
+    } else {
+      CommonLoggerFactory.commonLogger.info(this, "Agent Gateway disabled")
+    }
+
+    {}
   }
 
 }
