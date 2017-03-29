@@ -4,12 +4,10 @@ import java.lang.management.ManagementFactory
 
 import io.argos.agent.SentinelConfiguration
 import io.argos.agent.bean.CheckMetrics
-import io.argos.agent.util.{HostnameProvider, WindowBuffer}
+import io.argos.agent.util.{HostnameProvider, OSBeanAccessor, WindowBuffer}
 
 
 class LoadAverageSentinel(override val conf: SentinelConfiguration) extends Sentinel {
-  private val osMBean = ManagementFactory.getOperatingSystemMXBean()
-
   private lazy val threshold = conf.threshold
   val wBuffer = new WindowBuffer[Double](conf.windowSize)
 
@@ -19,7 +17,7 @@ class LoadAverageSentinel(override val conf: SentinelConfiguration) extends Sent
 
   def analyze() : Unit = {
     if (System.currentTimeMillis >= nextReact) {
-      val loadAvg = osMBean.getSystemLoadAverage
+      val loadAvg = OSBeanAccessor.loadAvg
       wBuffer.push(loadAvg)
 
       if (log.isDebugEnabled) {

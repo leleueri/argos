@@ -92,14 +92,17 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
             HostnameProvider.hostname))
 
         context.become(offline) // become offline. this mode try to check the metrics but call logger with debug level
-        context.parent ! NodeStatus(OFFLINE_NODE)
+        context.system.eventStream.publish(NodeStatus(OFFLINE_NODE))
       case ex: IOException =>
         log.warning("Unexpected IO Exception : {}", ex.getMessage, ex) // do we have to become offline in this case??
     }
   }
 
   private def offline : Receive = {
-    case CheckNodeStatus => if (tryToProcessControls) sender() ! NodeStatus(ONLINE_NODE)
+    case CheckNodeStatus => if (tryToProcessControls) {
+      //sender() ! NodeStatus(ONLINE_NODE)
+      context.system.eventStream.publish(NodeStatus(ONLINE_NODE))
+    }
     case msg => log.debug("node is offline, message <{}> will be ignored", msg)
   }
 

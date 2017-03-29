@@ -31,6 +31,11 @@ class SentinelOrchestrator extends Actor with ActorLogging {
 
   val metricsProvider = context.actorOf(Props(classOf[MetricsProvider], configJmx), name = "MetricsProvider")
 
+  @throws[Exception](classOf[Exception])
+  override def preStart(): Unit = {
+    this.context.system.eventStream.subscribe(this.self, classOf[NodeStatus])
+  }
+
   private def startSentinel[T <: Sentinel](clazz: Class[T], confKey: String, needsMetrics: Boolean = true) : Unit = {
     val actorName: String = confKey.split("\\.").last
     if (globalConfig.hasPath(confKey)) {
