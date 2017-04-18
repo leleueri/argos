@@ -95,6 +95,8 @@ object Constants {
 
   val CONF_ORCHESTRATOR = "argos.orchestrator"
   val CONF_ORCHESTRATOR_ENABLE = CONF_ORCHESTRATOR + ".enable"
+  val CONF_ORCHESTRATOR_HOST = CONF_ORCHESTRATOR + ".http-hostname"
+  val CONF_ORCHESTRATOR_PORT = CONF_ORCHESTRATOR + ".http-port"
 }
 
 object Messages {

@@ -4,7 +4,11 @@ import akka.actor.ActorRef
 
 
 
-case class GatewayDescription(name: String, endpoint: ActorRef, up: Boolean = true, loadAvg: Double = 0.0)
+case class GatewayDescription(name: String, endpoint: ActorRef, up: Boolean = true, loadAvg: Double = 0.0) {
+  def toStatus() = GatewayStatus(name, up, loadAvg)
+}
+
+case class GatewayStatus(name: String, up: Boolean = true, loadAvg: Double = 0.0)
 
 /**
   * Send by the AgentGateway to itself in order to schedule

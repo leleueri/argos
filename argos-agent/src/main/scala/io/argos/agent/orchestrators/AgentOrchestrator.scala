@@ -29,6 +29,16 @@ class AgentOrchestrator(agentOrchestratorCfg: AgentOrchestratorConfig) extends A
       log.info("AgentGateway '{}' is dead", ref)
       agents.remove(ref)
     }
+    case Terminated(ref) => {
+      log.info("AgentGateway '{}' is dead", ref)
+      agents.remove(ref)
+    }
+    case GetClusterStatus() => {
+      log.info("HTTP Endpoint request cluster status" )
+      sender() ! agents.values.map(_.toStatus()).toList
+    }
   }
 
 }
+
+case class GetClusterStatus()

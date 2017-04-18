@@ -47,13 +47,15 @@ object SentinelConfiguration {
 
 case class AgentGatewayConfig(enable: Boolean, name: String, orchestratorHost: String, orchestratorPort: Int)
 
-case class AgentOrchestratorConfig(enable: Boolean)
+case class AgentOrchestratorConfig(enable: Boolean, hostname: String, port: Int) // only http host:port because tcp are linked to akka configuration through pathexpression
 
 object ConfigHelper {
 
   def getAgentOrchestratorConfig(config: Config) : AgentOrchestratorConfig = {
     new AgentOrchestratorConfig(
-      if (config.hasPath(CONF_ORCHESTRATOR_ENABLE)) config.getBoolean(CONF_ORCHESTRATOR_ENABLE) else false
+      if (config.hasPath(CONF_ORCHESTRATOR_ENABLE)) config.getBoolean(CONF_ORCHESTRATOR_ENABLE) else false,
+    if (config.hasPath(CONF_ORCHESTRATOR_HOST)) config.getString(CONF_ORCHESTRATOR_HOST) else "0.0.0.0",
+    if (config.hasPath(CONF_ORCHESTRATOR_PORT)) config.getInt(CONF_ORCHESTRATOR_PORT) else 8080
     )
   }
 
