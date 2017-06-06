@@ -1,39 +1,22 @@
 package io.argos.agent
 
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import Constants._
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import spray.json.DefaultJsonProtocol._
-import spray.json._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import akka.util.Timeout
-import akka.util.Timeout._
 import com.typesafe.config.{Config, ConfigFactory}
-import io.argos.agent.bean.{GatewayDescription, GatewayStatus}
 import io.argos.agent.notifiers.NotifierProvider
-import io.argos.agent.orchestrators.{AgentOrchestrator, GetClusterStatus, SentinelOrchestrator}
+import io.argos.agent.orchestrators.{AgentOrchestrator, OrchestratorHttpHandler, SentinelOrchestrator}
 import io.argos.agent.util.CommonLoggerFactory
 import io.argos.agent.workers.AgentGateway
-import akka.pattern.ask
-
-import scala.concurrent.{Future, duration}
-import scala.concurrent.duration._
-import scala.concurrent.duration.FiniteDuration
 
 // to convert the entrySet of globalConfig.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS)
 import collection.JavaConversions._
 
-trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val gatewayDescription = jsonFormat3(GatewayStatus)
-}
 
 
-object Launcher extends App with JsonSupport{
+object Launcher extends App {
 
   implicit val system = ActorSystem(ACTOR_SYSTEM)
 
@@ -64,15 +47,7 @@ object Launcher extends App with JsonSupport{
     val orchestratorCfg = ConfigHelper.getAgentOrchestratorConfig(cfg)
     if (orchestratorCfg.enable) {
       CommonLoggerFactory.commonLogger.info(this, "Agent Orchestrator enabled")
-      val orchestrator = system.actorOf(Props(classOf[AgentOrchestrator], orchestratorCfg), name = "AgentOrchestrator")
-
-      // start HTTP Endpoint
-      implicit val materializer = ActorMaterializer()
-      // FIXME use this ExecutionContxet for HTTP or create a dedicated one???
-      implicit val executionContext = system.dispatcher
-      val bindingFuture = Http().bindAndHandle(buildRoute(orchestrator), orchestratorCfg.hostname, orchestratorCfg.port)
-      println(s"HTTP Server online at http://${orchestratorCfg.hostname}:${orchestratorCfg.port}/ ...")
-
+      system.actorOf(Props(classOf[AgentOrchestrator], orchestratorCfg, cfg.getDuration("akka.http.server.request-timeout")), name = "AgentOrchestrator")
     } else {
       CommonLoggerFactory.commonLogger.info(this, "Agent Orchestrator disabled")
     }
@@ -114,16 +89,5 @@ object Launcher extends App with JsonSupport{
         }
     )
   }
-
-  def buildRoute(orchestrator: ActorRef) : Route =
-    path("cluster"/"state") {
-        get {
-          // TODO use the HTTP configuration
-          implicit val timeout: Timeout = 20.seconds
-          // query the actor for the current auction state
-          val status = (orchestrator ? GetClusterStatus()).mapTo[List[GatewayStatus]]
-          complete(status)
-        }
-    }
 
 }

@@ -1,5 +1,7 @@
 package io.argos.agent.orchestrators
 
+import java.time.Duration
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Terminated}
 import io.argos.agent.AgentOrchestratorConfig
 import io.argos.agent.bean.{GatewayDescription, Joining, Registered}
@@ -7,12 +9,16 @@ import io.argos.agent.bean.{GatewayDescription, Joining, Registered}
 import scala.collection.mutable.Map
 
 
+
 /**
   * Manage the interactions with each agent.
   */
-class AgentOrchestrator(agentOrchestratorCfg: AgentOrchestratorConfig) extends Actor with ActorLogging {
+class AgentOrchestrator(agentOrchestratorCfg: AgentOrchestratorConfig, requestTimeout: Duration) extends Actor with ActorLogging {
 
   val agents : Map[ActorRef, GatewayDescription] = Map()
+
+  implicit val actorSystem = this.context.system
+  new OrchestratorHttpHandler(self, agentOrchestratorCfg, requestTimeout)
 
   override def receive: Receive = {
     case Joining(description) => {
