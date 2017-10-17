@@ -4,11 +4,17 @@ import akka.actor.ActorRef
 
 
 
-case class GatewayDescription(name: String, endpoint: ActorRef, up: Boolean = true, loadAvg: Double = 0.0) {
-  def toStatus() = GatewayStatus(name, up, loadAvg)
+case class GatewayDescription(name: String, endpoint: ActorRef, up: Boolean = true, loadAvg: Double = 0.0, gatewayUp : Boolean = true) {
+  private def computeState() = (gatewayUp, up) match {
+    case (false, _) => "UNKNOWN"
+    case (true, true) => "UP"
+    case (true, false) => "DOWN"
+  }
+
+  def toStatus() = GatewayStatus(name, computeState(), loadAvg)
 }
 
-case class GatewayStatus(name: String, up: Boolean = true, loadAvg: Double = 0.0)
+case class GatewayStatus(name: String, state: String = "UP", loadAvg: Double = 0.0)
 
 /**
   * Send by the AgentGateway to itself in order to schedule

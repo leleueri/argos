@@ -76,6 +76,7 @@ object Launcher extends App {
   def startAllNotifiers = {
     cfg.getConfig(CONF_OBJECT_ENTRY_NOTIFIERS).entrySet().toList.filter(_.getKey.matches("[^\\.]+\\." + CONF_PROVIDER_CLASS_KEY)).foreach(
         confValue => {
+          // TODO add enable configuration value for notifier element
           try {
             val clazz: String = confValue.getValue.unwrapped().asInstanceOf[String]
             CommonLoggerFactory.commonLogger.info(this, "Initialize '{}' notifier", clazz)

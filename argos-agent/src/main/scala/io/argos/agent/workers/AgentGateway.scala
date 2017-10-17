@@ -48,14 +48,17 @@ class AgentGateway(conf: AgentGatewayConfig) extends Actor with ActorLogging {
       context.watch(orchestrator)
       // stop joining request
       scheduler.cancel()
-      scheduleLoadInfo(loadAvgDelay)
+      scheduler = scheduleLoadInfo(loadAvgDelay)
       // switch to nominal state
+      log.info("AgentGateway is now in nominal state")
       context.become(nominal)
     }
     case NodeStatus(Messages.ONLINE_NODE) => {
+      log.debug("Node is ONLINE")
       online = true
     }
     case NodeStatus(Messages.OFFLINE_NODE) => {
+      log.debug("Node is OFFLINE")
       online = false
     }
   }
@@ -73,9 +76,11 @@ class AgentGateway(conf: AgentGatewayConfig) extends Actor with ActorLogging {
       context.unbecome()
     }
     case NodeStatus(Messages.ONLINE_NODE) => {
+      log.debug("Node is ONLINE")
       online = true
     }
     case NodeStatus(Messages.OFFLINE_NODE) => {
+      log.debug("Node is OFFLINE")
       online = false
     }
   }
