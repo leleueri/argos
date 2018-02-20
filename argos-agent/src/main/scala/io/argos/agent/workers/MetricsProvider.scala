@@ -35,19 +35,16 @@ class MetricsProvider(jmxConfig: Config) extends NotificationListener with Actor
   val upLevel = jmxConfig.getString(CONF_ORCHESTRATOR_UP_LEVEL)
   val upLabel = jmxConfig.getString(CONF_ORCHESTRATOR_UP_LABEL)
 
+  JmxClient.initInstance(hostname, port, user, pwd)(context.system)
+
+  val jmxClient = JmxClient.getInstance()
+
   log.debug("Start MetricsProvider with params : hostname=<{}>, port=<{}>, user=<{}>, password=<{}>", hostname, port, user, pwd)
 
-  val jmxClient =  try {
-    JmxClient(hostname, port, user, pwd)
-  } catch {
-    case e => {
-      log.error(e, "Unable to initialize the JMX client, check the configuration. Actor system will terminate...")
-      context.system.terminate()
-      throw e;
-    }
+  val nodeProbe = (user, pwd) match {
+    case (Some(u), Some(p)) => new NodeProbe(hostname, port, u, p)
+    case (_, _) => new NodeProbe(hostname, port)
   }
-
-  val nodeProbe = new NodeProbe(hostname, port)
   lazy val thisEndpoint = nodeProbe.getEndpoint
 
   override def receive: Receive = {

@@ -1,10 +1,13 @@
 package io.argos.agent.orchestrators
 
-import java.time.Duration
+import java.time.{Duration, Instant}
+import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Terminated}
 import io.argos.agent.AgentOrchestratorConfig
-import io.argos.agent.bean.{GatewayDescription, HeartBeat, Joining, Registered}
+import io.argos.agent.bean.SnapshotProtocol._
+import io.argos.agent.bean._
+import io.argos.agent.util.{SnapshotReport, SnapshotReportDto}
 
 import scala.collection.mutable.Map
 
@@ -17,7 +20,10 @@ class AgentOrchestrator(agentOrchestratorCfg: AgentOrchestratorConfig, requestTi
 
   val agents : Map[String, GatewayDescription] = Map()
 
-  implicit val actorSystem = this.context.system
+  val orderReports : Map[String, SnapshotReport] = Map()
+
+  implicit val actorSystem = this.context.system;
+
   new OrchestratorHttpHandler(self, agentOrchestratorCfg, requestTimeout)
 
   override def receive: Receive = {
@@ -40,9 +46,54 @@ class AgentOrchestrator(agentOrchestratorCfg: AgentOrchestratorConfig, requestTi
       sender() ! agents.values.map(_.toStatus()).toList
     }
     case HeartBeat(Some(description)) => {
-      log.info("HeartBeat received with description : {}", description ) // TODO set to debug
+      log.debug("HeartBeat received with description : {}", description )
       agents += (description.name -> description)
     }
+    case RequestSnapshot(ks, table, flush) => {
+      log.info("Receive Snapshot order : ks={}, table={}, flush={}", ks, table, flush)
+      val order = SnapshotOrder(UUID.randomUUID().toString, ks, table, flush)
+      val report = agents.values.foldLeft(SnapshotReport(order)) {
+        (report, gateway) =>
+          gateway.endpoint ! order
+          report.copy(status = report.status + (gateway.endpoint -> SnapshotStatus(order.id, gateway.name, STATUS_ONGOING)))
+      }
+      orderReports += (order.id -> report)
+      sender() ! order.id
+    }
+    case snapshotStatus : SnapshotStatus => {
+      orderReports.get(snapshotStatus.id) match {
+        case Some(report) => {
+          val tmpRep = report.copy(status = report.status + (sender() -> snapshotStatus))
+          orderReports += (snapshotStatus.id -> tmpRep.copy(updateDate = Instant.now().toEpochMilli, done = !tmpRep.status.exists(_._2.state.equals(STATUS_ONGOING))))
+        }
+        case None => log.error("Receive a SnapshotStatus '{}' for unknown Snapshot Order!", snapshotStatus)
+      }
+
+    }
+    case RequestKeyspaceSnapshot(keyspace) => {
+      val groupByKs = orderReports.values.groupBy(report => report.order.keyspace)
+      val reports = groupByKs.get(keyspace).map(_.toList).getOrElse(List())
+      sender() ! reports.map(snapshotReportToDTO)
+    }
+    case RequestSnapshotStatus(orderId) => {
+      sender() ! orderReports.get(orderId).map(snapshotReportToDTO)
+    }
+  }
+
+  private def snapshotReportToDTO(report: SnapshotReport) = {
+    val status = if (!report.done) STATUS_ONGOING else if (report.status.exists(_._2.state.equals(STATUS_KO))) STATUS_KO else STATUS_OK
+    val nodeByState = report.status.values.groupBy(_.state)
+    SnapshotReportDto(report.order.id,
+      report.order.keyspace,
+      report.order.table,
+      report.order.flush,
+      status,
+      report.initDate,
+      report.updateDate,
+      nodeByState.get(STATUS_OK).getOrElse(Iterable.empty).map(_.gatewayName).toList,
+      nodeByState.get(STATUS_KO).getOrElse(Iterable.empty).map(_.gatewayName).toList,
+      nodeByState.get(STATUS_ONGOING).getOrElse(Iterable.empty).map(_.gatewayName).toList
+    )
   }
 
   private def switchGatewayState(ref: ActorRef) : Unit = {
@@ -54,3 +105,9 @@ class AgentOrchestrator(agentOrchestratorCfg: AgentOrchestratorConfig, requestTi
 }
 
 case class GetClusterStatus()
+
+case class RequestKeyspaceSnapshot(ks: String)
+case class RequestSnapshot(ks: String, table: Option[String], flush: Boolean = true)
+case class SnapshotId(id: String, ks: String, table: Option[String])
+case class RequestSnapshotStatus(order: String)
+case class ResponseSnapshotStatus(order: String, status: String, start: Long, end: Long, details : Iterable[SnapshotStatus])

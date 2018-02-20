@@ -2,10 +2,11 @@ package io.argos.agent.workers
 
 import java.util.concurrent.{Executors, TimeUnit}
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import io.argos.agent.Constants._
 import io.argos.agent.{AgentGatewayConfig, Messages}
 import io.argos.agent.bean._
+import io.argos.agent.orchestrators.AgentOrchestrator
 import io.argos.agent.util.OSBeanAccessor
 
 import scala.concurrent.ExecutionContext
@@ -21,7 +22,7 @@ class AgentGateway(conf: AgentGatewayConfig) extends Actor with ActorLogging {
 
   val joiningDelay = FiniteDuration.apply(5, TimeUnit.MINUTES)
   val initialJoiningDelay = FiniteDuration.apply(1, TimeUnit.SECONDS)
-  val loadAvgDelay = FiniteDuration.apply(1, TimeUnit.MINUTES)
+  val loadAvgDelay = FiniteDuration.apply(5, TimeUnit.SECONDS)
 
   // scheduler to generate frequent actions
   // this scheduler is initialized with the RequestJoining in order
@@ -29,6 +30,8 @@ class AgentGateway(conf: AgentGatewayConfig) extends Actor with ActorLogging {
   var scheduler = scheduleRequestJoining(initialJoiningDelay)
 
   var online = true
+
+  val snapshotMng = context.actorOf(Props(classOf[SnapshotManager], conf), name = "SnapshotManager")
 
   @throws[Exception](classOf[Exception])
   override def preStart(): Unit = {
@@ -83,19 +86,31 @@ class AgentGateway(conf: AgentGatewayConfig) extends Actor with ActorLogging {
       log.debug("Node is OFFLINE")
       online = false
     }
+    case order : SnapshotOrder => {
+      log.debug("Snapshot order received: {}", order)
+      if (online) {
+        snapshotMng ! order
+      } else {
+        orchestratorRef ! SnapshotStatus(order.id, conf.name, SnapshotProtocol.STATUS_KO, Some(s"${conf.name} is offline"))
+      }
+    }
+    case orderStatus : SnapshotStatus => {
+      log.debug("Status for Snapshot order received: {}", orderStatus)
+      orchestratorRef ! orderStatus
+    }
   }
 
   private def scheduleRequestJoining(delay : FiniteDuration) = {
     context.system.scheduler.schedule(
-      delay,
       FiniteDuration.apply(1, TimeUnit.MINUTES),
+      delay,
       self, RequestJoining())
   }
 
   private def scheduleLoadInfo(delay : FiniteDuration) = {
     context.system.scheduler.schedule(
-      delay,
       FiniteDuration.apply(1, TimeUnit.MINUTES),
+      delay,
       self, HeartBeat())
   }
 

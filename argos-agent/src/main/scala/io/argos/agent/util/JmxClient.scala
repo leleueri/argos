@@ -4,6 +4,7 @@ import java.nio.file.Paths
 import javax.management._
 import javax.management.remote.{JMXConnector, JMXConnectorFactory, JMXServiceURL}
 
+import akka.actor.ActorSystem
 import io.argos.agent.bean._
 import org.apache.cassandra.metrics.CassandraMetricsRegistry.{JmxCounterMBean, JmxGaugeMBean}
 import org.apache.cassandra.service.StorageServiceMBean
@@ -22,8 +23,6 @@ import scala.collection.mutable.Map
   */
 abstract class JmxClient(hostname: String, port: Int, user: Option[String] = None, pwd: Option[String] = None) {
 
-  // TODO Heap usage & GC stats ?? --> StopTheWorld duration???
-
   var connector = createConnection()
   var mbeanServerCnx = createMBeanServer
 
@@ -33,9 +32,9 @@ abstract class JmxClient(hostname: String, port: Int, user: Option[String] = Non
 
   private def createConnection() : JMXConnector = {
     val url = new JMXServiceURL(s"service:jmx:rmi:///jndi/rmi://${hostname}:${port}/jmxrmi")
-    user match {
-      case Some(login) => JMXConnectorFactory.connect(url, Map(JMXConnector.CREDENTIALS -> Array(login, pwd.get)).asJava)
-      case None => JMXConnectorFactory.connect(url)
+    (user, pwd) match {
+      case (Some(login), Some(pass)) => JMXConnectorFactory.connect(url, Map(JMXConnector.CREDENTIALS -> Array(login, pass)).asJava)
+      case _ => JMXConnectorFactory.connect(url)
     }
   }
 
@@ -58,6 +57,20 @@ abstract class JmxClient(hostname: String, port: Int, user: Option[String] = Non
     listeners.foreach {
       case (objName, listener) =>  mbeanServerCnx.addNotificationListener (objName, listener, null, null)
      }
+  }
+
+  def takeSnapshot(name : String, keyspace: String, table: Option[String], flush: Boolean) : Unit = {
+    table match {
+        // FIXME : Beware in the lastest Cassandra version these methods are deprecated
+    case None => {
+      if (flush) storageServiceProxy.forceKeyspaceFlush(keyspace)
+      storageServiceProxy.takeSnapshot(name, keyspace)
+      }
+    case Some(table) => {
+      if (flush) storageServiceProxy.forceKeyspaceFlush(keyspace, table)
+      storageServiceProxy.takeTableSnapshot(keyspace, table, name)
+      }
+    }
   }
 
   def getStorageSpaceInformation() : Array[StorageSpaceInfo] = {
@@ -273,14 +286,31 @@ class JmxClientCassandraUpstream(hostname: String, port: Int, user: Option[Strin
 
 object JmxClient {
 
-  def apply(hostname: String, port: Int) : JmxClient = apply(hostname, port, None, None)
+  var jmxClient : Option[JmxClient] = None
 
-  def apply(hostname: String, port: Int, user: Option[String], pwd: Option[String]) : JmxClient = {
-    if (CassandraVersion.version == 2.1) {
-      new JmxClientCassandra21(hostname, port, user, pwd)
-    } else {
-      new JmxClientCassandraUpstream(hostname, port, user, pwd)
+  def initInstance(hostname: String, port: Int)(implicit actorSystem: ActorSystem) : Unit = initInstance(hostname, port, None, None)
+  def initInstance(hostname: String, port: Int, user: Option[String], pwd: Option[String])(implicit actorSystem: ActorSystem) : Unit = {
+    if (jmxClient.isEmpty) {
+      jmxClient = try {
+        Some(
+          if (CassandraVersion.version == 2.1) {
+            new JmxClientCassandra21(hostname, port, user, pwd)
+          } else {
+            new JmxClientCassandraUpstream(hostname, port, user, pwd)
+          }
+        )
+      } catch {
+        case e => {
+          CommonLoggerFactory.commonLogger.error(e, "Unable to initialize the JMX client, check the configuration. Actor system will terminate...")
+          actorSystem.terminate()
+          throw e;
+        }
+      }
     }
   }
 
+  def getInstance() : JmxClient = jmxClient match {
+    case None => throw new IllegalStateException("JmxClient must be initialized first")
+    case Some(cli) => cli
+  }
 }

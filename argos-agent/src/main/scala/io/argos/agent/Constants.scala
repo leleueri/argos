@@ -7,11 +7,11 @@ object Constants {
 
   val ACTOR_SYSTEM = "Argos"
 
+  val CONF_ENABLE = "enable"
 
   val CONF_ORCHESTRATOR_INTERVAL = "argos.scheduler-interval"
 
   val CONF_CASSANDRA_VERSION = "argos.cassandra-version"
-
   val CONF_OBJECT_ENTRY_METRICS = "argos.metrics"
   val CONF_ORCHESTRATOR_JMX_HOST = "jmx-host"
   val CONF_ORCHESTRATOR_JMX_PORT = "jmx-port"
@@ -20,10 +20,10 @@ object Constants {
   val CONF_ORCHESTRATOR_DOWN_LABEL = "node-down-label"
   val CONF_ORCHESTRATOR_DOWN_LEVEL = "node-down-level"
   val CONF_ORCHESTRATOR_UP_LABEL = "node-up-label"
-  val CONF_ORCHESTRATOR_UP_LEVEL = "node-up-level"
 
+  val CONF_ORCHESTRATOR_UP_LEVEL = "node-up-level"
   val CONF_OBJECT_ENTRY_SENTINEL = "argos.sentinel"
-  val CONF_OBJECT_ENTRY_SENTINEL_ENABLE = CONF_OBJECT_ENTRY_SENTINEL+".enable"
+  val CONF_OBJECT_ENTRY_SENTINEL_ENABLE = CONF_OBJECT_ENTRY_SENTINEL+"." + CONF_ENABLE
   val CONF_OBJECT_ENTRY_SENTINEL_LOADAVG = CONF_OBJECT_ENTRY_SENTINEL+".load-avg"
   val CONF_OBJECT_ENTRY_SENTINEL_AVAILABLE = CONF_OBJECT_ENTRY_SENTINEL+".consistency-level"
   val CONF_OBJECT_ENTRY_SENTINEL_CONSISTENCY_RR_BLOCKING = CONF_OBJECT_ENTRY_SENTINEL+".consistency-repaired-blocking"
@@ -67,7 +67,7 @@ object Constants {
 
 
   val CONF_THRESHOLD = "threshold"
-  val CONF_ENABLED = "enabled"
+  val CONF_ENABLED = CONF_ENABLE + "d"
   val CONF_LEVEL = "level"
   val CONF_LABEL = "label"
   val CONF_FREQUENCY = "period"
@@ -94,7 +94,7 @@ object Constants {
   val CONF_MAIL_NOTIFIER_FROM = "from"
 
   val CONF_ORCHESTRATOR = "argos.orchestrator"
-  val CONF_ORCHESTRATOR_ENABLE = CONF_ORCHESTRATOR + ".enable"
+  val CONF_ORCHESTRATOR_ENABLE = CONF_ORCHESTRATOR + "." + CONF_ENABLE
   val CONF_ORCHESTRATOR_HOST = CONF_ORCHESTRATOR + ".http-hostname"
   val CONF_ORCHESTRATOR_PORT = CONF_ORCHESTRATOR + ".http-port"
 }
