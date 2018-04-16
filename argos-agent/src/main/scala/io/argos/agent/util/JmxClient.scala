@@ -138,10 +138,10 @@ abstract class JmxClient(hostname: String, port: Int, user: Option[String] = Non
   def getInternalStageValue(stage: String) = initThreadPoolStageValues(stage, "internal")
 
   private def initThreadPoolStageValues(stage: String, path: String) : ThreadPoolStats =  {
-    val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toInt
-    val completed = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CompletedTasks"), "Value").toString.toInt
-    val poolSize = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=MaxPoolSize"), "Value").toString.toInt
-    val pending = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=PendingTasks"), "Value").toString.toInt
+    val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toLong
+    val completed = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CompletedTasks"), "Value").toString.toLong
+    val poolSize = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=MaxPoolSize"), "Value").toString.toLong
+    val pending = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=PendingTasks"), "Value").toString.toLong
 
     val currentlyBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CurrentlyBlockedTasks"), "Count").toString.toLong
     val totalBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=TotalBlockedTasks"),  "Count").toString.toLong
@@ -250,10 +250,10 @@ class JmxClientCassandra21(hostname: String, port: Int, user: Option[String] = N
   }
 
   private def initThreadPoolStageValues21(stage: String, path: String) : ThreadPoolStats =  {
-    val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toInt
-    val completed = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CompletedTasks"), "Value").toString.toInt
-    val poolSize = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=MaxPoolSize"), "Value").toString.toInt
-    val pending = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=PendingTasks"), "Value").toString.toInt
+    val active = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=ActiveTasks"),"Value").toString.toLong
+    val completed = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CompletedTasks"), "Value").toString.toLong
+    val poolSize = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=MaxPoolSize"), "Value").toString.toLong
+    val pending = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=PendingTasks"), "Value").toString.toLong
 
     val currentlyBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=CurrentlyBlockedTasks"), "Value" ).toString.toLong
     val totalBlocked = mbeanServerCnx.getAttribute(new ObjectName(s"org.apache.cassandra.metrics:type=ThreadPools,path=${path},scope=${stage},name=TotalBlockedTasks"), "Value" ).toString.toLong
